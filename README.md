@@ -1,6 +1,8 @@
 # MailjetSwiftMailer
 
 [![Build Status](https://travis-ci.org/welpdev/MailjetSwiftMailer.svg?branch=master)](https://travis-ci.org/welpdev/MailjetSwiftMailer)
+[![Packagist](https://img.shields.io/packagist/v/welp/mailjet-swiftmailer.svg)](https://packagist.org/packages/welp/mailjet-swiftmailer)
+[![Packagist](https://img.shields.io/packagist/dt/welp/mailjet-swiftmailer.svg)](https://packagist.org/packages/welp/mailjet-swiftmailer)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/welpdev/mailjetBundle/blob/master/LICENSE.md)
 
 A SwiftMailer transport implementation for Mailjet
