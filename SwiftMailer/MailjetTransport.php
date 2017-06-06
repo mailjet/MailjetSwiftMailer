@@ -126,11 +126,11 @@ class MailjetTransport implements Swift_Transport
     }
 
     /**
-     * @param Swift_Mime_SimpleMessage $message
+     * @param Swift_Mime_Message $message
      * @param null $failedRecipients
      * @return int Number of messages sent
      */
-    public function send(Swift_Mime_SimpleMessage $message, &$failedRecipients = null)
+    public function send(Swift_Mime_Message $message, &$failedRecipients = null)
     {
         $this->resultApi = null;
 
@@ -179,11 +179,11 @@ class MailjetTransport implements Swift_Transport
      * https://dev.mailjet.com/guides/#send-api-json-properties
      * Convert Swift_Mime_SimpleMessage into Mailjet Payload for send API
      *
-     * @param Swift_Mime_SimpleMessage $message
+     * @param Swift_Mime_Message $message
      * @return array Mailjet Send Message
      * @throws \Swift_SwiftException
      */
-    public function getMailjetMessage(Swift_Mime_SimpleMessage $message)
+    public function getMailjetMessage(Swift_Mime_Message $message)
     {
         // @TODO
         // FromEmail
@@ -357,10 +357,10 @@ class MailjetTransport implements Swift_Transport
     }
 
     /**
-     * @param Swift_Mime_SimpleMessage $message
+     * @param Swift_Mime_Message $message
      * @return string
      */
-    protected function getMessagePrimaryContentType(Swift_Mime_SimpleMessage $message)
+    protected function getMessagePrimaryContentType(Swift_Mime_Message $message)
     {
         $contentType = $message->getContentType();
         if ($this->supportsContentType($contentType)) {
