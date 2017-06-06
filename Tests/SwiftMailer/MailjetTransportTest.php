@@ -60,6 +60,41 @@ class MailjetTransportTest extends TestCase
         $this->assertMessageSendable($message);
     }
 
+    public function testSendHTMLEmail()
+    {
+        $transport = $this->createTransport();
+        $message = new \Swift_Message('Test Subject', 'Foo bar');
+        $message
+            ->addTo('to@example.com', 'To Name')
+            ->addFrom('from@example.com', 'From Name')
+        ;
+        $message->setBody("<!DOCTYPE html>
+                <html>
+                <body>
+
+                <h1>My First Heading</h1>
+
+                <p>My first paragraph.</p>
+
+                </body>
+                </html>
+                ", "text/html");
+        $mailjetMessage = $transport->getMailjetMessage($message);
+
+        $this->assertEquals("<!DOCTYPE html>
+                <html>
+                <body>
+
+                <h1>My First Heading</h1>
+
+                <p>My first paragraph.</p>
+
+                </body>
+                </html>
+                ", $mailjetMessage['Html-part']);
+        $this->assertMessageSendable($message);
+    }
+
     public function testSendTextEmailWithTemplateId()
     {
         $transport = $this->createTransport();
@@ -73,6 +108,45 @@ class MailjetTransportTest extends TestCase
         $mailjetMessage = $transport->getMailjetMessage($message);
 
         $this->assertEquals('azertyuiop', $mailjetMessage['Mj-TemplateID']);
+        $this->assertMessageSendable($message);
+    }
+
+    public function testSendEmailWithAllCustomHeaders()
+    {
+        $transport = $this->createTransport();
+        $message = new \Swift_Message('Test Subject', 'Foo bar');
+        $message
+            ->addTo('to@example.com', 'To Name')
+            ->addFrom('from@example.com', 'From Name')
+        ;
+        $message->setBody("Hello world!");
+        $message->getHeaders()->addTextHeader('X-MJ-TemplateID', 'azertyuiop');
+        $message->getHeaders()->addTextHeader('X-MJ-TemplateLanguage', true);
+        $message->getHeaders()->addTextHeader('X-MJ-TemplateErrorReporting', 'air-traffic-control@mailjet.com');
+        $message->getHeaders()->addTextHeader('X-MJ-TemplateErrorDeliver', 'deliver');
+        $message->getHeaders()->addTextHeader('X-Mailjet-Prio', 3);
+        $message->getHeaders()->addTextHeader('X-Mailjet-Campaign', 'azertyuiop');
+        $message->getHeaders()->addTextHeader('X-Mailjet-DeduplicateCampaign', false);
+        $message->getHeaders()->addTextHeader('X-Mailjet-TrackOpen', 1);
+        $message->getHeaders()->addTextHeader('X-Mailjet-TrackClick', 2);
+        $message->getHeaders()->addTextHeader('X-MJ-CustomID', 'PassengerEticket1234');
+        $message->getHeaders()->addTextHeader('X-MJ-EventPayLoad', 'Eticket,1234,row,15,seat,B');
+        $message->getHeaders()->addTextHeader('X-MJ-Vars', array('today'=>'monday'));
+
+        $mailjetMessage = $transport->getMailjetMessage($message);
+
+        $this->assertEquals('azertyuiop', $mailjetMessage['Mj-TemplateID']);
+        $this->assertEquals(true, $mailjetMessage['Mj-TemplateLanguage']);
+        $this->assertEquals('air-traffic-control@mailjet.com', $mailjetMessage['MJ-TemplateErrorReporting']);
+        $this->assertEquals('deliver', $mailjetMessage['MJ-TemplateErrorDeliver']);
+        $this->assertEquals(3, $mailjetMessage['Mj-Prio']);
+        $this->assertEquals('azertyuiop', $mailjetMessage['Mj-campaign']);
+        $this->assertEquals(false, $mailjetMessage['Mj-deduplicatecampaign']);
+        $this->assertEquals(1, $mailjetMessage['Mj-trackopen']);
+        $this->assertEquals(2, $mailjetMessage['Mj-trackclick']);
+        $this->assertEquals('PassengerEticket1234', $mailjetMessage['Mj-CustomID']);
+        $this->assertEquals('Eticket,1234,row,15,seat,B', $mailjetMessage['Mj-EventPayLoad']);
+        $this->assertEquals(array('today'=>'monday'), $mailjetMessage['Vars']);
         $this->assertMessageSendable($message);
     }
 
