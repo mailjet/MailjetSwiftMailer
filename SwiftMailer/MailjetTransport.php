@@ -218,40 +218,26 @@ class MailjetTransport implements Swift_Transport
         $ccAddresses = $message->getCc() ? $message->getCc() : [];
         $bccAddresses = $message->getBcc() ? $message->getBcc() : [];
         $replyToAddresses = $message->getReplyTo() ? $message->getReplyTo() : [];
-        $to = array();
+
         $attachments = array();
-        $images = array();
         $headers = array();
-        $tags = array();
-        $inlineCss = null;
+
+
+        // Format To, Cc, Bcc
+        $to = "";
         foreach ($toAddresses as $toEmail => $toName) {
-            $to[] = array(
-                'email' => $toEmail,
-                'name'  => $toName,
-                'type'  => 'to'
-            );
+            $to .= "$toName <$toEmail>";
         }
-        foreach ($replyToAddresses as $replyToEmail => $replyToName) {
-            if ($replyToName) {
-                $headers['Reply-To'] = sprintf('%s <%s>', $replyToEmail, $replyToName);
-            } else {
-                $headers['Reply-To'] = $replyToEmail;
-            }
-        }
+        $cc = "";
         foreach ($ccAddresses as $ccEmail => $ccName) {
-            $to[] = array(
-                'email' => $ccEmail,
-                'name'  => $ccName,
-                'type'  => 'cc'
-            );
+            $cc .= "$toName <$toEmail>";
         }
+        $bcc = "";
         foreach ($bccAddresses as $bccEmail => $bccName) {
-            $to[] = array(
-                'email' => $bccEmail,
-                'name'  => $bccName,
-                'type'  => 'bcc'
-            );
+            $bcc .= "$toName <$toEmail>";
         }
+
+        // Handle content
         $bodyHtml = $bodyText = null;
         if ($contentType === 'text/plain') {
             $bodyText = $message->getBody();
@@ -260,6 +246,8 @@ class MailjetTransport implements Swift_Transport
         } else {
             $bodyHtml = $message->getBody();
         }
+
+
         // Handle attachments
         foreach ($message->getChildren() as $child) {
             if ($child instanceof \Swift_Image) {
@@ -295,22 +283,17 @@ class MailjetTransport implements Swift_Transport
             }
         }*/
         $mailjetMessage = array(
-            'html'       => $bodyHtml,
-            'text'       => $bodyText,
-            'subject'    => $message->getSubject(),
-            'from_email' => $fromEmails[0],
-            'from_name'  => $fromAddresses[$fromEmails[0]],
-            'to'         => $to,
-            'headers'    => $headers,
-            'inline_css' => $inlineCss,
-            'tags'       => $tags
+            'FromEmail' => $fromEmails[0],
+            'FromName'  => $fromAddresses[$fromEmails[0]],
+            'Html-part'       => $bodyHtml,
+            'Text-part'       => $bodyText,
+            'Subject'    => $message->getSubject(),
+            'Headers'    => $headers,
+            'Recipients' => $this->getRecipients($message)
         );
+
         if (count($attachments) > 0) {
             $mailjetMessage['attachments'] = $attachments;
-        }
-
-        if (count($images) > 0) {
-            $mailjetMessage['images'] = $images;
         }
         /*if ($message->getHeaders()->has('X-MC-Autotext')) {
             $autoText = $message->getHeaders()->get('X-MC-Autotext')->getValue();
@@ -334,6 +317,32 @@ class MailjetTransport implements Swift_Transport
             $mailjetMessage['subaccount'] = $this->getSubaccount();
         }*/
         return $mailjetMessage;
+    }
+
+    /**
+     * Get all the addresses this message should be sent to.
+     *
+     * @param \Swift_Mime_Message $message
+     *
+     * @return array
+     */
+    protected function getRecipients(Swift_Mime_Message $message)
+    {
+        $to = [];
+        if ($message->getTo()) {
+            $to = array_merge($to, $message->getTo());
+        }
+        if ($message->getCc()) {
+            $to = array_merge($to, $message->getCc());
+        }
+        if ($message->getBcc()) {
+            $to = array_merge($to, $message->getBcc());
+        }
+        $recipients = [];
+        foreach ($to as $address => $name) {
+            $recipients[] = ['Email' => $address, 'Name' => $name];
+        }
+        return $recipients;
     }
 
     /**

@@ -44,4 +44,49 @@ class MailjetTransportTest extends TestCase
             $this->createTransport()
         );
     }
+
+    public function testSendTextEmail()
+    {
+        $transport = $this->createTransport();
+        $message = new \Swift_Message('Test Subject', 'Foo bar');
+        $message
+            ->addTo('to@example.com', 'To Name')
+            ->addFrom('from@example.com', 'From Name')
+        ;
+        $message->setBody("Hello world!", 'text/plain');
+        $mailjetMessage = $transport->getMailjetMessage($message);
+
+        $this->assertEquals('Hello world!', $mailjetMessage['Text-part']);
+        $this->assertMessageSendable($message);
+    }
+
+    /**
+     * Performs a test send through the Mandrill API. Provides details of failure if there are any problems.
+     * @param MailjetTransport|null $transport
+     * @param \Swift_Message $message
+     */
+    protected function assertMessageSendable(\Swift_Message $message, $transport = null)
+    {
+        if (!$transport) {
+            $transport = $this->createTransport();
+        }
+        $this->assertNotNull($transport->getApiKey(), 'No API key specified');
+        $this->assertNotNull($transport->getApiSecret(), 'No API Secret specified');
+
+        $parameters = array(
+            'message' => $transport->getMailjetMessage($message)
+        );
+
+        try {
+            $configuration = new MessageSendConfiguration();
+            $processor = new Processor();
+            $processor->processConfiguration($configuration, $parameters);
+        } catch (\Exception $e) {
+            $this->fail(sprintf(
+                "Mailjet message contains errors, %s\n\n%s",
+                $e->getMessage(),
+                json_encode($parameters['message'], JSON_PRETTY_PRINT)
+            ));
+        }
+    }
 }
