@@ -4,7 +4,7 @@ namespace Welp\MailjetSwiftMailer\SwiftMailer;
 use \Swift_Events_EventDispatcher;
 use \Swift_Events_EventListener;
 use \Swift_Events_SendEvent;
-use \Swift_Mime_SimpleMessage;
+use \Swift_Mime_Message;
 use \Swift_Transport;
 use \Swift_Attachment;
 use \Swift_MimePart;
