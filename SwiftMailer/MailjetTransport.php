@@ -185,44 +185,22 @@ class MailjetTransport implements Swift_Transport
      */
     public function getMailjetMessage(Swift_Mime_Message $message)
     {
-        // @TODO
-        // FromEmail
-        // FromName
-        // Sender
-        // Recipients
-        // To
-        // Cc, bcc
-        // Subject
-        // Text-part
-        // Html-parts
-        // Mj-TemplateID
-        // Mj-TemplateLanguage
-        // MJ-TemplateErrorReporting
-        // MJ-TemplateErrorDeliver
-        // Attachments
-        // Inline_attachments
-        // Mj-prio
-        // Mj-campaign
-        // Mj-deduplicatecampaign
-        // Mj-trackopen
-        // Mj-trackclick
-        // Mj-CustomID
-        // Mj-EventPayLoad
-        // Headers
-        // Vars
-        // Messages
         $contentType = $this->getMessagePrimaryContentType($message);
         $fromAddresses = $message->getFrom();
         $fromEmails = array_keys($fromAddresses);
         $toAddresses = $message->getTo();
         $ccAddresses = $message->getCc() ? $message->getCc() : [];
         $bccAddresses = $message->getBcc() ? $message->getBcc() : [];
-        $replyToAddresses = $message->getReplyTo() ? $message->getReplyTo() : [];
 
         $attachments = array();
         $headers = array();
+        // @TODO retrieve header which is not MJ or Mailjet to add it
 
+        if ($replyTo = $this->getReplyTo($message)) {
+            array_push($headers, array('Reply-To' => $replyTo));
+        }
 
+        // @TODO only support Recipients so far
         // Format To, Cc, Bcc
         $to = "";
         foreach ($toAddresses as $toEmail => $toName) {
@@ -250,16 +228,10 @@ class MailjetTransport implements Swift_Transport
 
         // Handle attachments
         foreach ($message->getChildren() as $child) {
-            if ($child instanceof \Swift_Image) {
-                $images[] = array(
-                    'type'    => $child->getContentType(),
-                    'name'    => $child->getId(),
-                    'content' => base64_encode($child->getBody()),
-                );
-            } elseif ($child instanceof Swift_Attachment && ! ($child instanceof \Swift_Image)) {
+            if ($child instanceof Swift_Attachment) {
                 $attachments[] = array(
-                    'type'    => $child->getContentType(),
-                    'name'    => $child->getFilename(),
+                    'Content-type'    => $child->getContentType(),
+                    'Filename'    => $child->getFilename(),
                     'content' => base64_encode($child->getBody())
                 );
             } elseif ($child instanceof Swift_MimePart && $this->supportsContentType($child->getContentType())) {
@@ -270,59 +242,68 @@ class MailjetTransport implements Swift_Transport
                 }
             }
         }
-        /*if ($message->getHeaders()->has('List-Unsubscribe')) {
-            $headers['List-Unsubscribe'] = $message->getHeaders()->get('List-Unsubscribe')->getValue();
-        }
-        if ($message->getHeaders()->has('X-MC-InlineCSS')) {
-            $inlineCss = $message->getHeaders()->get('X-MC-InlineCSS')->getValue();
-        }
-        if ($message->getHeaders()->has('X-MC-Tags')) {
-            $tags = $message->getHeaders()->get('X-MC-Tags')->getValue();
-            if (!is_array($tags)) {
-                $tags = explode(',', $tags);
-            }
-        }*/
+
         $mailjetMessage = array(
-            'FromEmail' => $fromEmails[0],
-            'FromName'  => $fromAddresses[$fromEmails[0]],
-            'Html-part'       => $bodyHtml,
-            'Text-part'       => $bodyText,
+            'FromEmail'  => $fromEmails[0],
+            'FromName'   => $fromAddresses[$fromEmails[0]],
+            'Html-part'  => $bodyHtml,
+            'Text-part'  => $bodyText,
             'Subject'    => $message->getSubject(),
             'Headers'    => $headers,
             'Recipients' => $this->getRecipients($message)
         );
 
         if (count($attachments) > 0) {
-            $mailjetMessage['attachments'] = $attachments;
+            $mailjetMessage['Attachments'] = $attachments;
         }
-        /*if ($message->getHeaders()->has('X-MC-Autotext')) {
-            $autoText = $message->getHeaders()->get('X-MC-Autotext')->getValue();
-            if (in_array($autoText, array('true','on','yes','y', true), true)) {
-                $mailjetMessage['auto_text'] = true;
-            }
-            if (in_array($autoText, array('false','off','no','n', false), true)) {
-                $mailjetMessage['auto_text'] = false;
-            }
+
+        // Handle custom headers for Mailjet
+        if ($message->getHeaders()->has('X-MJ-TemplateID')) {
+            $mailjetMessage['Mj-TemplateID'] = $message->getHeaders()->get('X-MJ-TemplateID')->getValue();
         }
-        if ($message->getHeaders()->has('X-MC-GoogleAnalytics')) {
-            $analyticsDomains = explode(',', $message->getHeaders()->get('X-MC-GoogleAnalytics')->getValue());
-            if (is_array($analyticsDomains)) {
-                $mailjetMessage['google_analytics_domains'] = $analyticsDomains;
-            }
+        if ($message->getHeaders()->has('X-MJ-TemplateLanguage')) {
+            $mailjetMessage['Mj-TemplateLanguage'] = $message->getHeaders()->get('X-MJ-TemplateLanguage')->getValue();
         }
-        if ($message->getHeaders()->has('X-MC-GoogleAnalyticsCampaign')) {
-            $mailjetMessage['google_analytics_campaign'] = $message->getHeaders()->get('X-MC-GoogleAnalyticsCampaign')->getValue();
+        if ($message->getHeaders()->has('X-MJ-TemplateErrorReporting')) {
+            $mailjetMessage['MJ-TemplateErrorReporting'] = $message->getHeaders()->get('X-MJ-TemplateErrorReporting')->getValue();
         }
-        if ($this->getSubaccount()) {
-            $mailjetMessage['subaccount'] = $this->getSubaccount();
-        }*/
+        if ($message->getHeaders()->has('X-MJ-TemplateErrorDeliver')) {
+            $mailjetMessage['MJ-TemplateErrorDeliver'] = $message->getHeaders()->get('X-MJ-TemplateErrorDeliver')->getValue();
+        }
+        if ($message->getHeaders()->has('X-Mailjet-Prio')) {
+            $mailjetMessage['Mj-Prio'] = $message->getHeaders()->get('X-Mailjet-Prio')->getValue();
+        }
+        if ($message->getHeaders()->has('X-Mailjet-Campaign')) {
+            $mailjetMessage['Mj-campaign'] = $message->getHeaders()->get('X-Mailjet-Campaign')->getValue();
+        }
+        if ($message->getHeaders()->has('X-Mailjet-DeduplicateCampaign')) {
+            $mailjetMessage['Mj-deduplicatecampaign'] = $message->getHeaders()->get('X-Mailjet-DeduplicateCampaign')->getValue();
+        }
+        if ($message->getHeaders()->has('X-Mailjet-TrackOpen')) {
+            $mailjetMessage['Mj-trackopen'] = $message->getHeaders()->get('X-Mailjet-TrackOpen')->getValue();
+        }
+        if ($message->getHeaders()->has('X-Mailjet-TrackClick')) {
+            $mailjetMessage['Mj-trackclick'] = $message->getHeaders()->get('X-Mailjet-TrackClick')->getValue();
+        }
+        if ($message->getHeaders()->has('X-MJ-CustomID')) {
+            $mailjetMessage['Mj-CustomID'] = $message->getHeaders()->get('X-MJ-CustomID')->getValue();
+        }
+        if ($message->getHeaders()->has('X-MJ-EventPayLoad')) {
+            $mailjetMessage['Mj-EventPayLoad'] = $message->getHeaders()->get('X-MJ-EventPayLoad')->getValue();
+        }
+        if ($message->getHeaders()->has('X-MJ-Vars')) {
+            $mailjetMessage['Vars'] = $message->getHeaders()->get('X-MJ-Vars')->getValue();
+        }
+
+        // @TODO bulk messages
+
         return $mailjetMessage;
     }
 
     /**
      * Get all the addresses this message should be sent to.
      *
-     * @param \Swift_Mime_Message $message
+     * @param Swift_Mime_Message $message
      *
      * @return array
      */
@@ -343,6 +324,20 @@ class MailjetTransport implements Swift_Transport
             $recipients[] = ['Email' => $address, 'Name' => $name];
         }
         return $recipients;
+    }
+
+    /**
+     * Get the 'reply_to' headers and format as required by Mailjet.
+     *
+     * @param Swift_Mime_Message $message
+     *
+     * @return string|null
+     */
+    protected function getReplyTo(Swift_Mime_Message $message)
+    {
+        if (is_array($message->getReplyTo())) {
+            return current($message->getReplyTo()).' <'.key($message->getReplyTo()).'>';
+        }
     }
 
     /**

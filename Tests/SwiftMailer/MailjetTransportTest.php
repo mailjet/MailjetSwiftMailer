@@ -60,6 +60,22 @@ class MailjetTransportTest extends TestCase
         $this->assertMessageSendable($message);
     }
 
+    public function testSendTextEmailWithTemplateId()
+    {
+        $transport = $this->createTransport();
+        $message = new \Swift_Message('Test Subject', 'Foo bar');
+        $message
+            ->addTo('to@example.com', 'To Name')
+            ->addFrom('from@example.com', 'From Name')
+        ;
+        $message->setBody("Hello world!");
+        $message->getHeaders()->addTextHeader('X-MJ-TemplateID', 'azertyuiop');
+        $mailjetMessage = $transport->getMailjetMessage($message);
+
+        $this->assertEquals('azertyuiop', $mailjetMessage['Mj-TemplateID']);
+        $this->assertMessageSendable($message);
+    }
+
     /**
      * Performs a test send through the Mandrill API. Provides details of failure if there are any problems.
      * @param MailjetTransport|null $transport
