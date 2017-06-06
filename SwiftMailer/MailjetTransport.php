@@ -31,6 +31,15 @@ class MailjetTransport implements Swift_Transport
     protected $apiSecret;
 
     /**
+     * url (Default: api.mailjet.com) : domain name of the API
+     * version (Default: v3) : API version (only working for Mailjet API V3 +)
+     * call (Default: true) : turns on(true) / off the call to the API
+     * secured (Default: true) : turns on(true) / off the use of 'https'
+     * @var array|null
+     */
+    protected $clientOptions;
+
+    /**
      * @var array|null
      */
     protected $resultApi;
@@ -72,60 +81,6 @@ class MailjetTransport implements Swift_Transport
     }
 
     /**
-     * @param string $apiKey
-     * @return $this
-     */
-    public function setApiKey($apiKey)
-    {
-        $this->apiKey = $apiKey;
-        return $this;
-    }
-    /**
-     * @return null|string
-     */
-    public function getApiKey()
-    {
-        return $this->apiKey;
-    }
-
-    /**
-     * @param string $apiSecret
-     * @return $this
-     */
-    public function setApiSecret($apiSecret)
-    {
-        $this->apiSecret = $apiSecret;
-        return $this;
-    }
-    /**
-     * @return null|string
-     */
-    public function getApiSecret()
-    {
-        return $this->apiSecret;
-    }
-
-    /**
-     * @return null|array
-     */
-    public function getResultApi()
-    {
-        return $this->resultApi;
-    }
-
-    /**
-     * @return \Mailjet\Client
-     * @throws \Swift_TransportException
-     */
-    protected function createMailjetClient()
-    {
-        if ($this->apiKey === null || $this->apiSecret === null) {
-            throw new \Swift_TransportException('Cannot create instance of \Mailjet\Client while API key is NULL');
-        }
-        return new \Mailjet\Client($this->apiKey, $this->apiSecret);
-    }
-
-    /**
      * @param Swift_Mime_Message $message
      * @param null $failedRecipients
      * @return int Number of messages sent
@@ -133,6 +88,7 @@ class MailjetTransport implements Swift_Transport
     public function send(Swift_Mime_Message $message, &$failedRecipients = null)
     {
         $this->resultApi = null;
+        $failedRecipients = (array) $failedRecipients;
 
         if ($event = $this->eventDispatcher->createSendEvent($this, $message)) {
             $this->eventDispatcher->dispatchEvent($event, 'beforeSendPerformed');
@@ -146,21 +102,29 @@ class MailjetTransport implements Swift_Transport
         $mailjetMessage = $this->getMailjetMessage($message);
         // Create mailjetClient
         $mailjetClient = $this->createMailjetClient();
-        // send API call
-        $this->resultApi = $mailjetClient->post(Resources::$Email, $mailjetMessage);
 
-        // get result
-        if ($this->resultApi->success()) {
-            $sendCount += $this->resultApi->getCount();
+        try {
+            // send API call
+            $this->resultApi = $mailjetClient->post(Resources::$Email, $mailjetMessage);
+            // get result
+            if ($this->resultApi->success()) {
+                $sendCount += $this->resultApi->getCount();
+                $resultStatus = Swift_Events_SendEvent::RESULT_SUCCESS;
+            } else {
+                $sendCount += $this->resultApi->getCount();
+                $resultStatus = Swift_Events_SendEvent::RESULT_FAILED;
+            }
+        } catch (\Exception $e) {
+            $failedRecipients = $mailjetMessage['Recipients'];
+            $sendCount = 0;
+            $resultStatus = Swift_Events_SendEvent::RESULT_FAILED;
         }
+
 
         // Send SwiftMailer Event
         if ($event) {
-            if ($sendCount > 0) {
-                $event->setResult(Swift_Events_SendEvent::RESULT_SUCCESS);
-            } else {
-                $event->setResult(Swift_Events_SendEvent::RESULT_FAILED);
-            }
+            $event->setResult($resultStatus);
+            $event->setFailedRecipients($failedRecipients);
             $this->eventDispatcher->dispatchEvent($event, 'sendPerformed');
         }
 
@@ -174,6 +138,47 @@ class MailjetTransport implements Swift_Transport
     {
         $this->eventDispatcher->bindEventListener($plugin);
     }
+
+    /**
+     * @return \Mailjet\Client
+     * @throws \Swift_TransportException
+     */
+    protected function createMailjetClient()
+    {
+        if ($this->apiKey === null || $this->apiSecret === null) {
+            throw new \Swift_TransportException('Cannot create instance of \Mailjet\Client while API key is NULL');
+        }
+
+        if (isset($this->clientOptions)) {
+            return new \Mailjet\Client($this->apiKey, $this->apiSecret, true, $this->clientOptions);
+        }
+
+        return new \Mailjet\Client($this->apiKey, $this->apiSecret);
+    }
+
+    /**
+     * Get the special X-MJ|Mailjet-* headers. https://app.mailjet.com/docs/emails_headers
+     *
+     * @return array
+     */
+    public static function getMailjetHeaders()
+    {
+        return array(
+            'X-MJ-TemplateID' => 'Mj-TemplateID',
+            'X-MJ-TemplateLanguage' => 'Mj-TemplateLanguage',
+            'X-MJ-TemplateErrorReporting' => 'MJ-TemplateErrorReporting',
+            'X-MJ-TemplateErrorDeliver' => 'MJ-TemplateErrorDeliver',
+            'X-Mailjet-Prio' => 'Mj-Prio',
+            'X-Mailjet-Campaign' => 'Mj-campaign',
+            'X-Mailjet-DeduplicateCampaign' => 'Mj-deduplicatecampaign',
+            'X-Mailjet-TrackOpen' => 'Mj-trackopen',
+            'X-Mailjet-TrackClick' => 'Mj-trackclick',
+            'X-MJ-CustomID' => 'Mj-CustomID',
+            'X-MJ-EventPayLoad' => 'Mj-EventPayLoad',
+            'X-MJ-Vars' => 'Vars'
+            );
+    }
+
 
     /**
      * https://dev.mailjet.com/guides/#send-api-json-properties
@@ -193,15 +198,16 @@ class MailjetTransport implements Swift_Transport
         $bccAddresses = $message->getBcc() ? $message->getBcc() : [];
 
         $attachments = array();
+
+        // Process Headers
         $headers = array();
-        // @TODO retrieve header which is not MJ or Mailjet to add it
+        $mailjetSpecificHeaders = $this->prepareHeaders($message);
 
         if ($replyTo = $this->getReplyTo($message)) {
             array_push($headers, array('Reply-To' => $replyTo));
         }
 
-        // @TODO only support Recipients so far
-        // Format To, Cc, Bcc
+        // @TODO only Format To, Cc, Bcc
         $to = "";
         foreach ($toAddresses as $toEmail => $toName) {
             $to .= "$toName <$toEmail>";
@@ -253,51 +259,44 @@ class MailjetTransport implements Swift_Transport
             'Recipients' => $this->getRecipients($message)
         );
 
-        if (count($attachments) > 0) {
-            $mailjetMessage['Attachments'] = $attachments;
+        if (count($mailjetSpecificHeaders) > 0) {
+            $mailjetMessage = array_merge($mailjetMessage, $mailjetSpecificHeaders);
         }
 
-        // Handle custom headers for Mailjet
-        if ($message->getHeaders()->has('X-MJ-TemplateID')) {
-            $mailjetMessage['Mj-TemplateID'] = $message->getHeaders()->get('X-MJ-TemplateID')->getValue();
-        }
-        if ($message->getHeaders()->has('X-MJ-TemplateLanguage')) {
-            $mailjetMessage['Mj-TemplateLanguage'] = $message->getHeaders()->get('X-MJ-TemplateLanguage')->getValue();
-        }
-        if ($message->getHeaders()->has('X-MJ-TemplateErrorReporting')) {
-            $mailjetMessage['MJ-TemplateErrorReporting'] = $message->getHeaders()->get('X-MJ-TemplateErrorReporting')->getValue();
-        }
-        if ($message->getHeaders()->has('X-MJ-TemplateErrorDeliver')) {
-            $mailjetMessage['MJ-TemplateErrorDeliver'] = $message->getHeaders()->get('X-MJ-TemplateErrorDeliver')->getValue();
-        }
-        if ($message->getHeaders()->has('X-Mailjet-Prio')) {
-            $mailjetMessage['Mj-Prio'] = $message->getHeaders()->get('X-Mailjet-Prio')->getValue();
-        }
-        if ($message->getHeaders()->has('X-Mailjet-Campaign')) {
-            $mailjetMessage['Mj-campaign'] = $message->getHeaders()->get('X-Mailjet-Campaign')->getValue();
-        }
-        if ($message->getHeaders()->has('X-Mailjet-DeduplicateCampaign')) {
-            $mailjetMessage['Mj-deduplicatecampaign'] = $message->getHeaders()->get('X-Mailjet-DeduplicateCampaign')->getValue();
-        }
-        if ($message->getHeaders()->has('X-Mailjet-TrackOpen')) {
-            $mailjetMessage['Mj-trackopen'] = $message->getHeaders()->get('X-Mailjet-TrackOpen')->getValue();
-        }
-        if ($message->getHeaders()->has('X-Mailjet-TrackClick')) {
-            $mailjetMessage['Mj-trackclick'] = $message->getHeaders()->get('X-Mailjet-TrackClick')->getValue();
-        }
-        if ($message->getHeaders()->has('X-MJ-CustomID')) {
-            $mailjetMessage['Mj-CustomID'] = $message->getHeaders()->get('X-MJ-CustomID')->getValue();
-        }
-        if ($message->getHeaders()->has('X-MJ-EventPayLoad')) {
-            $mailjetMessage['Mj-EventPayLoad'] = $message->getHeaders()->get('X-MJ-EventPayLoad')->getValue();
-        }
-        if ($message->getHeaders()->has('X-MJ-Vars')) {
-            $mailjetMessage['Vars'] = $message->getHeaders()->get('X-MJ-Vars')->getValue();
+        if (count($attachments) > 0) {
+            $mailjetMessage['Attachments'] = $attachments;
         }
 
         // @TODO bulk messages
 
         return $mailjetMessage;
+    }
+
+    /**
+     * Extract Mailjet specific header
+     * return an array of formatted data for Mailjet send API
+     * @param  Swift_Mime_Message $message
+     * @return array
+     */
+    protected function prepareHeaders(Swift_Mime_Message $message)
+    {
+        $mailjetHeaders = self::getMailjetHeaders();
+        $messageHeaders = $message->getHeaders();
+
+        $mailjetData = array();
+
+
+        foreach (array_keys($mailjetHeaders) as $headerName) {
+            /** @var \Swift_Mime_Headers_MailboxHeader $value */
+           if (null !== $value = $messageHeaders->get($headerName)) {
+               // Handle custom headers
+               $mailjetData[$mailjetHeaders[$headerName]] = $value->getValue();
+               // remove Mailjet specific headers
+               $messageHeaders->removeAll($headerName);
+           }
+        }
+
+        return $mailjetData;
     }
 
     /**
@@ -380,5 +379,64 @@ class MailjetTransport implements Swift_Transport
             $contentType = $propRef->getValue($message);
         }
         return $contentType;
+    }
+
+    /**
+     * @param string $apiKey
+     * @return $this
+     */
+    public function setApiKey($apiKey)
+    {
+        $this->apiKey = $apiKey;
+        return $this;
+    }
+    /**
+     * @return null|string
+     */
+    public function getApiKey()
+    {
+        return $this->apiKey;
+    }
+
+    /**
+     * @param string $apiSecret
+     * @return $this
+     */
+    public function setApiSecret($apiSecret)
+    {
+        $this->apiSecret = $apiSecret;
+        return $this;
+    }
+    /**
+     * @return null|string
+     */
+    public function getApiSecret()
+    {
+        return $this->apiSecret;
+    }
+
+    /**
+     * @param array $clientOptions
+     * @return $this
+     */
+    public function setClientOptions(array $clientOptions = [])
+    {
+        $this->clientOptions = $clientOptions;
+        return $this;
+    }
+    /**
+     * @return null|array
+     */
+    public function getClientOptions()
+    {
+        return $this->clientOptions;
+    }
+
+    /**
+     * @return null|array
+     */
+    public function getResultApi()
+    {
+        return $this->resultApi;
     }
 }
