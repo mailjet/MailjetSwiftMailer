@@ -208,7 +208,7 @@ class MailjetTransport implements Swift_Transport
         $mailjetSpecificHeaders = $this->prepareHeaders($message);
 
         if ($replyTo = $this->getReplyTo($message)) {
-            array_push($headers, array('Reply-To' => $replyTo));
+            $headers = array_merge($headers, array('Reply-To' => $replyTo));
         }
 
         // @TODO only Format To, Cc, Bcc

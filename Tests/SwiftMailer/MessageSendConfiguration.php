@@ -80,7 +80,7 @@ class MessageSendConfiguration implements ConfigurationInterface
     {
         /** @var ArrayNodeDefinition $attachmentsNode */
         $attachmentsNode = $rootNode->children()->arrayNode('Attachments')->prototype('array');
-        $attachmentsNode->children()->scalarNode('Content-type')->isRequired();
+        $attachmentsNode->children()->scalarNode('Content_type')->isRequired();
         $attachmentsNode->children()->scalarNode('Filename')->isRequired();
         $attachmentsNode->children()->scalarNode('content')->isRequired();
     }
@@ -92,7 +92,7 @@ class MessageSendConfiguration implements ConfigurationInterface
     {
         /** @var ArrayNodeDefinition $attachmentsNode */
         $attachmentsNode = $rootNode->children()->arrayNode('Inline_attachments')->prototype('array');
-        $attachmentsNode->children()->scalarNode('Content-type')->isRequired();
+        $attachmentsNode->children()->scalarNode('Content_type')->isRequired();
         $attachmentsNode->children()->scalarNode('Filename')->isRequired();
         $attachmentsNode->children()->scalarNode('content')->isRequired();
     }

@@ -150,8 +150,97 @@ class MailjetTransportTest extends TestCase
         $this->assertMessageSendable($message);
     }
 
+    public function testMultipartNullContentType()
+    {
+        $transport = $this->createTransport();
+        $message = new \Swift_Message('Test Subject', 'Foo bar');
+        $message
+            ->addPart('Foo bar', 'text/plain')
+            ->addPart('<p>Foo bar</p>', 'text/html')
+            ->addTo('to@example.com', 'To Name')
+            ->addFrom('from@example.com', 'From Name')
+        ;
+        $mailjetMessage = $transport->getMailjetMessage($message);
+
+        $this->assertEquals('Foo bar', $mailjetMessage['Text-part'], 'Multipart email should contain plaintext message');
+        $this->assertEquals('<p>Foo bar</p>', $mailjetMessage['Html-part'], 'Multipart email should contain HTML message');
+        $this->assertMessageSendable($message);
+    }
+
+
+    public function testMessage()
+    {
+        $transport = $this->createTransport();
+        $message = new \Swift_Message('Test Subject', '<p>Foo bar</p>', 'text/html');
+        $attachment = new \Swift_Attachment($this->createPngContent(), 'filename.png', 'image/png');
+        $message->attach($attachment);
+        $message
+            ->addTo('to@example.com', 'To Name')
+            ->addFrom('from@example.com', 'From Name')
+            ->addCc('cc-1@example.com', 'CC 1 Name')
+            ->addCc('cc-2@example.com', 'CC 2 Name')
+            ->addBcc('bcc-1@example.com', 'BCC 1 Name')
+            ->addBcc('bcc-2@example.com', 'BCC 2 Name')
+            ->addReplyTo('reply-to@example.com', 'Reply To Name')
+        ;
+        $mailjetMessage = $transport->getMailjetMessage($message);
+
+        $this->assertEquals('<p>Foo bar</p>', $mailjetMessage['Html-part']);
+        $this->assertNull($mailjetMessage['Text-part'], 'HTML only email should not contain plaintext counterpart');
+        $this->assertEquals('Test Subject', $mailjetMessage['Subject']);
+        $this->assertEquals('from@example.com', $mailjetMessage['FromEmail']);
+        $this->assertEquals('From Name', $mailjetMessage['FromName']);
+
+        $this->assertMailjetMessageContainsRecipient('to@example.com', 'To Name', 'to', $mailjetMessage);
+        $this->assertMailjetMessageContainsRecipient('cc-1@example.com', 'CC 1 Name', 'cc', $mailjetMessage);
+        $this->assertMailjetMessageContainsRecipient('cc-2@example.com', 'CC 2 Name', 'cc', $mailjetMessage);
+        $this->assertMailjetMessageContainsRecipient('bcc-1@example.com', 'BCC 1 Name', 'bcc', $mailjetMessage);
+        $this->assertMailjetMessageContainsRecipient('bcc-2@example.com', 'BCC 2 Name', 'bcc', $mailjetMessage);
+
+        $this->assertMailjetMessageContainsAttachment('image/png', 'filename.png', $this->createPngContent(), $mailjetMessage);
+
+        $this->assertArrayHasKey('Reply-To', $mailjetMessage['Headers']);
+        $this->assertEquals('Reply To Name <reply-to@example.com>', $mailjetMessage['Headers']['Reply-To']);
+
+        $this->assertMessageSendable($message);
+    }
+
     /**
-     * Performs a test send through the Mandrill API. Provides details of failure if there are any problems.
+     * @param string $email
+     * @param string $name
+     * @param string $type
+     * @param array $message
+     */
+    protected function assertMailjetMessageContainsRecipient($email, $name, $type, array $message)
+    {
+        foreach ($message['Recipients'] as $recipient) {
+            if ($recipient['Email'] === $email && $recipient['Name'] === $name) {
+                $this->assertTrue(true);
+                return;
+            }
+        }
+        $this->fail(sprintf('Expected Mailjet message "to" contain %s recipient %s <%s>', $type, $email, $name));
+    }
+
+    /**
+     * @param string $type
+     * @param string $name
+     * @param string $content
+     * @param array $message
+     */
+    protected function assertMailjetMessageContainsAttachment($type, $name, $content, array $message)
+    {
+        foreach ($message['Attachments'] as $attachment) {
+            if ($attachment['Content-type'] === $type && $attachment['Filename'] === $name) {
+                $this->assertEquals($content, base64_decode($attachment['content']));
+                return;
+            }
+        }
+        $this->fail(sprintf('Expected Mailjet message to contain a %s attachment named %s', $type, $name));
+    }
+
+    /**
+     * Performs a test send through the Mailjet API. Provides details of failure if there are any problems.
      * @param MailjetTransport|null $transport
      * @param \Swift_Message $message
      */
@@ -178,5 +267,10 @@ class MailjetTransportTest extends TestCase
                 json_encode($parameters['message'], JSON_PRETTY_PRINT)
             ));
         }
+    }
+
+    protected function createPngContent()
+    {
+        return base64_decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX/TQBcNTh/AAAAAXRSTlPM0jRW/QAAAApJREFUeJxjYgAAAAYAAzY3fKgAAAAASUVORK5CYII=");
     }
 }
