@@ -107,16 +107,17 @@ class MailjetTransport implements Swift_Transport
         // Create mailjetClient
         $mailjetClient = $this->createMailjetClient();
 
-
         try {
             // send API call
             $this->resultApi = $mailjetClient->post(Resources::$Email, ['body' => $mailjetMessage]);
+
+            if (isset($this->resultApi->getBody()['Sent'])) {
+                $sendCount += count($this->resultApi->getBody()['Sent']);
+            }
             // get result
             if ($this->resultApi->success()) {
-                $sendCount += $this->resultApi->getCount();
                 $resultStatus = Swift_Events_SendEvent::RESULT_SUCCESS;
             } else {
-                $sendCount += $this->resultApi->getCount();
                 $resultStatus = Swift_Events_SendEvent::RESULT_FAILED;
             }
         } catch (\Exception $e) {
@@ -125,7 +126,6 @@ class MailjetTransport implements Swift_Transport
             $resultStatus = Swift_Events_SendEvent::RESULT_FAILED;
         }
 
-        dump($this->resultApi);
         // Send SwiftMailer Event
         if ($event) {
             $event->setResult($resultStatus);
