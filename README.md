@@ -68,6 +68,28 @@ For example:
 
 @TODO
 
+## Integration in Symfony
+
+If you want to use MailjetTransport in your Symfony project follow these small steps:
+
+1. `composer require welp/mailjet-swiftmailer`
+2. Into your `services.yml`, register MailjetTransport:
+
+    swiftmailer.mailer.transport.welp_mailjet:
+    class: Welp\MailjetSwiftMailer\SwiftMailer\MailjetTransport
+    arguments:
+        - "@swiftmailer.transport.eventdispatcher.welp_mailjet"
+        - "%welp_mailjet.api_key%"
+        - "%welp_mailjet.secret_key%"
+
+Note: We set `welp_mailjet.api_key` and `welp_mailjet.secret_key` into parameters.yml
+
+3. Finally, configure SwiftMailer in your `config.yml`:
+
+    # Swiftmailer Configuration
+    swiftmailer:
+        transport: welp_mailjet
+
 ## Execute Tests
 
     vendor/bin/phpunit -c .
