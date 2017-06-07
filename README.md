@@ -3,9 +3,11 @@
 [![Build Status](https://travis-ci.org/welpdev/MailjetSwiftMailer.svg?branch=master)](https://travis-ci.org/welpdev/MailjetSwiftMailer)
 [![Packagist](https://img.shields.io/packagist/v/welp/mailjet-swiftmailer.svg)](https://packagist.org/packages/welp/mailjet-swiftmailer)
 [![Packagist](https://img.shields.io/packagist/dt/welp/mailjet-swiftmailer.svg)](https://packagist.org/packages/welp/mailjet-swiftmailer)
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/welpdev/mailjetBundle/blob/master/LICENSE.md)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/welpdev/MailjetSwiftMailer/blob/master/LICENSE.md)
 
 A SwiftMailer transport implementation for Mailjet
+
+*Compatible Mailjet send API V3*
 
 🚧 **WORK IN PROGRESS...** 🚧
 
@@ -69,3 +71,7 @@ For example:
 ## Execute Tests
 
     vendor/bin/phpunit -c .
+
+## Contributing
+
+If you want to contribute to this project, look at [over here](CONTRIBUTING.md)
