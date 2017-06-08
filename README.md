@@ -11,30 +11,37 @@ A SwiftMailer transport implementation for Mailjet
 
 🚧 **WORK IN PROGRESS...** 🚧
 
+If you found any problem, feel free to open an issue!
+
 ## Installation
 
 Require the package with composer
 
-    composer require welp/mailjet-swiftmailer
+```bash
+composer require welp/mailjet-swiftmailer
+```
 
 ## Usage Example
 
-    $transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret);
-    $transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3', 'call' => false]); // optional
+```php
+$transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret);
+$transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3', 'call' => false]); // optional
 
-    $transport->send($message);
+$transport->send($message);
+```
 
 ## Mailjet client custom configuration
 
 You can pass an array in transport's constructor or use `setClientOptions` function:
 
-    $clientOptions = ['url' => "www.mailjet.com", 'version' => 'v3', 'call' => false];
-    $transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret, $clientOptions);
+```php
+$clientOptions = ['url' => "www.mailjet.com", 'version' => 'v3', 'call' => false];
+$transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret, $clientOptions);
 
-    or
+or
 
-    $transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3', 'call' => false]);
-
+$transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3', 'call' => false]);
+```
 
 Properties of $options:
 
@@ -60,7 +67,9 @@ Properties of $options:
 
 For example:
 
-    $message->getHeaders()->addTextHeader('X-MJ-TemplateLanguage', true);
+```php
+$message->getHeaders()->addTextHeader('X-MJ-TemplateLanguage', true);
+```
 
 [Mailjet documentation](https://dev.mailjet.com/guides/#send-api-json-properties)
 
@@ -96,7 +105,9 @@ swiftmailer:
 
 ## Execute Tests
 
-    vendor/bin/phpunit -c .
+```bash
+vendor/bin/phpunit -c .
+```
 
 ## Contributing
 
