@@ -34,6 +34,7 @@ class MailjetTransportTest extends TestCase
         $transport = new MailjetTransport($this->dispatcher);
         $transport->setApiKey(self::MAILJET_TEST_API_KEY);
         $transport->setApiSecret(self::MAILJET_TEST_API_SECRET);
+        $transport->setCall(false); // Do not perform the call
         return $transport;
     }
 
@@ -55,6 +56,7 @@ class MailjetTransportTest extends TestCase
         ;
         $message->setBody("Hello world!", 'text/plain');
         $mailjetMessage = $transport->getMailjetMessage($message);
+        $result = $transport->send($message);
 
         $this->assertEquals('Hello world!', $mailjetMessage['Text-part']);
         $this->assertMessageSendable($message);
@@ -80,6 +82,7 @@ class MailjetTransportTest extends TestCase
                 </html>
                 ", "text/html");
         $mailjetMessage = $transport->getMailjetMessage($message);
+        $result = $transport->send($message);
 
         $this->assertEquals("<!DOCTYPE html>
                 <html>
@@ -106,6 +109,7 @@ class MailjetTransportTest extends TestCase
         $message->setBody("Hello world!");
         $message->getHeaders()->addTextHeader('X-MJ-TemplateID', 'azertyuiop');
         $mailjetMessage = $transport->getMailjetMessage($message);
+        $result = $transport->send($message);
 
         $this->assertEquals('azertyuiop', $mailjetMessage['Mj-TemplateID']);
         $this->assertMessageSendable($message);
@@ -135,6 +139,8 @@ class MailjetTransportTest extends TestCase
 
         $mailjetMessage = $transport->getMailjetMessage($message);
 
+        $result = $transport->send($message);
+
         $this->assertEquals('azertyuiop', $mailjetMessage['Mj-TemplateID']);
         $this->assertEquals(true, $mailjetMessage['Mj-TemplateLanguage']);
         $this->assertEquals('air-traffic-control@mailjet.com', $mailjetMessage['MJ-TemplateErrorReporting']);
@@ -162,6 +168,8 @@ class MailjetTransportTest extends TestCase
         ;
         $mailjetMessage = $transport->getMailjetMessage($message);
 
+        $result = $transport->send($message);
+
         $this->assertEquals('Foo bar', $mailjetMessage['Text-part'], 'Multipart email should contain plaintext message');
         $this->assertEquals('<p>Foo bar</p>', $mailjetMessage['Html-part'], 'Multipart email should contain HTML message');
         $this->assertMessageSendable($message);
@@ -185,6 +193,8 @@ class MailjetTransportTest extends TestCase
         ;
         $mailjetMessage = $transport->getMailjetMessage($message);
 
+        $result = $transport->send($message);
+
         $this->assertEquals('<p>Foo bar</p>', $mailjetMessage['Html-part']);
         $this->assertNull($mailjetMessage['Text-part'], 'HTML only email should not contain plaintext counterpart');
         $this->assertEquals('Test Subject', $mailjetMessage['Subject']);
@@ -203,6 +213,54 @@ class MailjetTransportTest extends TestCase
         $this->assertEquals('Reply To Name <reply-to@example.com>', $mailjetMessage['Headers']['Reply-To']);
 
         $this->assertMessageSendable($message);
+    }
+
+    public function testBulkSendMessages()
+    {
+        $transport = $this->createTransport();
+
+        $messages = [];
+        for ($i=0; $i < 4; $i++) {
+            $message = new \Swift_Message('Test Subject', '<p>Foo bar</p>', 'text/html');
+            $attachment = new \Swift_Attachment($this->createPngContent(), 'filename.png', 'image/png');
+            $message->attach($attachment);
+            $message
+                ->addTo('to@example.com', 'To Name')
+                ->addFrom('from@example.com', 'From Name')
+                ->addCc('cc-1@example.com', 'CC 1 Name')
+                ->addCc('cc-2@example.com', 'CC 2 Name')
+                ->addBcc('bcc-1@example.com', 'BCC 1 Name')
+                ->addBcc('bcc-2@example.com', 'BCC 2 Name')
+                ->addReplyTo('reply-to@example.com', 'Reply To Name')
+            ;
+
+            array_push($messages, $message);
+        }
+
+
+        $result = $transport->bulkSend($messages);
+
+        foreach ($messages as $message) {
+            $mailjetMessage = $transport->getMailjetMessage($message);
+            $this->assertEquals('<p>Foo bar</p>', $mailjetMessage['Html-part']);
+            $this->assertNull($mailjetMessage['Text-part'], 'HTML only email should not contain plaintext counterpart');
+            $this->assertEquals('Test Subject', $mailjetMessage['Subject']);
+            $this->assertEquals('from@example.com', $mailjetMessage['FromEmail']);
+            $this->assertEquals('From Name', $mailjetMessage['FromName']);
+
+            $this->assertMailjetMessageContainsRecipient('to@example.com', 'To Name', 'to', $mailjetMessage);
+            $this->assertMailjetMessageContainsRecipient('cc-1@example.com', 'CC 1 Name', 'cc', $mailjetMessage);
+            $this->assertMailjetMessageContainsRecipient('cc-2@example.com', 'CC 2 Name', 'cc', $mailjetMessage);
+            $this->assertMailjetMessageContainsRecipient('bcc-1@example.com', 'BCC 1 Name', 'bcc', $mailjetMessage);
+            $this->assertMailjetMessageContainsRecipient('bcc-2@example.com', 'BCC 2 Name', 'bcc', $mailjetMessage);
+
+            $this->assertMailjetMessageContainsAttachment('image/png', 'filename.png', $this->createPngContent(), $mailjetMessage);
+
+            $this->assertArrayHasKey('Reply-To', $mailjetMessage['Headers']);
+            $this->assertEquals('Reply To Name <reply-to@example.com>', $mailjetMessage['Headers']['Reply-To']);
+
+            $this->assertMessageSendable($message);
+        }
     }
 
     /**

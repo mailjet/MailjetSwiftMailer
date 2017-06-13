@@ -21,14 +21,22 @@ class MailjetTransport implements Swift_Transport
     protected $eventDispatcher;
 
     /**
+     * Mailjet API Key
      * @var string|null
      */
     protected $apiKey;
 
     /**
+     * Mailjet API Secret
      * @var string|null
      */
     protected $apiSecret;
+
+    /**
+     * performs the call or not
+     * @var bool
+     */
+    protected $call;
 
     /**
      * url (Default: api.mailjet.com) : domain name of the API
@@ -50,11 +58,12 @@ class MailjetTransport implements Swift_Transport
      * @param string $apiSecret
      * @param array $clientOptions
      */
-    public function __construct(Swift_Events_EventDispatcher $eventDispatcher, $apiKey = null, $apiSecret = null, array $clientOptions = [])
+    public function __construct(Swift_Events_EventDispatcher $eventDispatcher, $apiKey = null, $apiSecret = null, $call = true, array $clientOptions = [])
     {
         $this->eventDispatcher = $eventDispatcher;
         $this->apiKey = $apiKey;
         $this->apiSecret = $apiSecret;
+        $this->call = $call;
         $this->clientOptions = $clientOptions;
     }
 
@@ -137,6 +146,49 @@ class MailjetTransport implements Swift_Transport
     }
 
     /**
+     * @param array $message (of Swift_Mime_Message)
+     * @param null $failedRecipients
+     * @return int Number of messages sent
+     */
+    public function bulkSend(array $messages, &$failedRecipients = null)
+    {
+        $this->resultApi = null;
+        $failedRecipients = (array) $failedRecipients;
+
+        $sendCount = 0;
+        $bodyRequest = ['Messages' => []];
+
+        foreach ($messages as $message) {
+            // extract Mailjet Message from SwiftMailer Message
+            $mailjetMessage = $this->getMailjetMessage($message);
+            array_push($bodyRequest['Messages'], $mailjetMessage);
+        }
+        // Create mailjetClient
+        $mailjetClient = $this->createMailjetClient();
+
+        try {
+            // send API call
+            $this->resultApi = $mailjetClient->post(Resources::$Email, ['body' => $bodyRequest]);
+
+            if (isset($this->resultApi->getBody()['Sent'])) {
+                $sendCount += count($this->resultApi->getBody()['Sent']);
+            }
+            // get result
+            if ($this->resultApi->success()) {
+                $resultStatus = Swift_Events_SendEvent::RESULT_SUCCESS;
+            } else {
+                $resultStatus = Swift_Events_SendEvent::RESULT_FAILED;
+            }
+        } catch (\Exception $e) {
+            //$failedRecipients = $mailjetMessage['Recipients'];
+            $sendCount = 0;
+            $resultStatus = Swift_Events_SendEvent::RESULT_FAILED;
+        }
+
+        return $sendCount;
+    }
+
+    /**
      * @param Swift_Events_EventListener $plugin
      */
     public function registerPlugin(Swift_Events_EventListener $plugin)
@@ -155,10 +207,10 @@ class MailjetTransport implements Swift_Transport
         }
 
         if (isset($this->clientOptions)) {
-            return new \Mailjet\Client($this->apiKey, $this->apiSecret, true, $this->clientOptions);
+            return new \Mailjet\Client($this->apiKey, $this->apiSecret, $this->call, $this->clientOptions);
         }
 
-        return new \Mailjet\Client($this->apiKey, $this->apiSecret);
+        return new \Mailjet\Client($this->apiKey, $this->apiSecret, $this->call);
     }
 
     /**
@@ -421,6 +473,23 @@ class MailjetTransport implements Swift_Transport
     public function getApiSecret()
     {
         return $this->apiSecret;
+    }
+
+    /**
+     * @param bool $call
+     * @return $this
+     */
+    public function setCall($call)
+    {
+        $this->call = $call;
+        return $this;
+    }
+    /**
+     * @return bool
+     */
+    public function getCall()
+    {
+        return $this->call;
     }
 
     /**

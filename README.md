@@ -9,8 +9,6 @@ A SwiftMailer transport implementation for Mailjet
 
 *Compatible Mailjet send API V3*
 
-🚧 **WORK IN PROGRESS...** 🚧
-
 If you found any problem, feel free to open an issue!
 
 ## Installation
@@ -25,7 +23,7 @@ composer require welp/mailjet-swiftmailer
 
 ```php
 $transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret);
-$transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3', 'call' => false]); // optional
+$transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3', 'call' => true]); // optional
 
 $transport->send($message);
 ```
@@ -40,7 +38,7 @@ $transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret, $clientOp
 
 or
 
-$transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3', 'call' => false]);
+$transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3', 'call' => true]);
 ```
 
 Properties of $options:
@@ -52,18 +50,18 @@ Properties of $options:
 
 ## Mailjet custom headers
 
-    'X-MJ-TemplateID'
-    'X-MJ-TemplateLanguage'
-    'X-MJ-TemplateErrorReporting'
-    'X-MJ-TemplateErrorDeliver'
-    'X-Mailjet-Prio'
-    'X-Mailjet-Campaign'
-    'X-Mailjet-DeduplicateCampaign'
-    'X-Mailjet-TrackOpen'
-    'X-Mailjet-TrackClick'
-    'X-MJ-CustomID'
-    'X-MJ-EventPayLoad'
-    'X-MJ-Vars'
+    X-MJ-TemplateID
+    X-MJ-TemplateLanguage
+    X-MJ-TemplateErrorReporting
+    X-MJ-TemplateErrorDeliver
+    X-Mailjet-Prio
+    X-Mailjet-Campaign
+    X-Mailjet-DeduplicateCampaign
+    X-Mailjet-TrackOpen
+    X-Mailjet-TrackClick
+    X-MJ-CustomID
+    X-MJ-EventPayLoad
+    X-MJ-Vars
 
 For example:
 
@@ -75,7 +73,27 @@ $message->getHeaders()->addTextHeader('X-MJ-TemplateLanguage', true);
 
 ## Mailjet bulk sending
 
-@TODO
+```php
+
+$emails = ['f001@bar.com', 'f002@bar.com', 'f003@bar.com', 'f004@bar.com', 'f005@bar.com', 'f006@bar.com', ...]
+
+$messages = [];
+foreach ($emails as $email) {
+    $message = new \Swift_Message('Test Subject', '<p>Foo bar</p>', 'text/html');
+    $message
+        ->addTo($email)
+        ->addFrom('from@example.com', 'From Name')
+        ->addReplyTo('reply-to@example.com', 'Reply To Name')
+    ;
+
+    array_push($messages, $message);
+}
+$transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret);
+$result = $transport->bulkSend($messages);
+
+```
+
+Note: does not work with Spool (SwiftMailer removed bulkSend from its API).
 
 ## Integration in Symfony
 
