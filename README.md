@@ -121,6 +121,11 @@ swiftmailer:
     transport: welp_mailjet
 ```
 
+## Mailjet references
+
+* [Mailjet PHP Wrapper](https://github.com/mailjet/mailjet-apiv3-php)
+* [Mailjet documentation: send transactional email](https://dev.mailjet.com/guides/#send-transactional-email)
+
 ## Execute Tests
 
 ```bash
