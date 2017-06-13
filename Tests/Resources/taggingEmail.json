@@ -1,9 +1,20 @@
 {
-    "FromEmail":"pilot@mailjet.com",
-    "FromName":"Mailjet Pilot",
-    "Subject":"Your email flight plan!",
-    "Text-part":"Dear passenger, welcome to Mailjet! May the delivery force be with you!",
-    "Html-part":"<h3>Dear passenger, welcome to Mailjet!</h3><br />May the delivery force be with you!",
-    "Recipients":[{"Email":"passenger@mailjet.com"}],
-    "Mj-CustomID":"PassengerEticket1234"
+    "Messages":[
+            {
+                    "From": {
+                            "Email": "pilot@mailjet.com",
+                            "Name": "Mailjet Pilot"
+                    },
+                    "To": [
+                            {
+                                    "Email": "passenger1@mailjet.com",
+                                    "Name": "passenger 1"
+                            }
+                    ],
+                    "Subject": "Your email flight plan!",
+                    "TextPart": "Dear passenger 1, welcome to Mailjet! May the delivery force be with you!",
+                    "HTMLPart": "<h3>Dear passenger 1, welcome to Mailjet!</h3><br />May the delivery force be with you!",
+                    "CustomID": "PassengerEticket1234"
+            }
+    ]
 }
