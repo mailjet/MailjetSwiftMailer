@@ -7,9 +7,14 @@
 
 A SwiftMailer transport implementation for Mailjet
 
-*Compatible Mailjet send API V3*
+*Compatible Mailjet send API V3.1*
 
 If you found any problem, feel free to open an issue!
+
+## TODO
+
+* Adding URL tags
+* Sandbox Mode
 
 ## Installation
 
@@ -23,22 +28,24 @@ composer require welp/mailjet-swiftmailer
 
 ```php
 $transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret);
-$transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3', 'call' => true]); // optional
+$transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3.1', 'call' => true]); // optional
 
 $transport->send($message);
 ```
+
+Note: with this version, you must configure the v3.1 API version /!\
 
 ## Mailjet client custom configuration
 
 You can pass an array in transport's constructor or use `setClientOptions` function:
 
 ```php
-$clientOptions = ['url' => "www.mailjet.com", 'version' => 'v3', 'call' => false];
+$clientOptions = ['url' => "www.mailjet.com", 'version' => 'v3.1', 'call' => false];
 $transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret, $clientOptions);
 
 or
 
-$transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3', 'call' => true]);
+$transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3.1', 'call' => true]);
 ```
 
 Properties of $options:

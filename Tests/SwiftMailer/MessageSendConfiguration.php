@@ -15,38 +15,32 @@ class MessageSendConfiguration implements ConfigurationInterface
     public function getConfigTreeBuilder()
     {
         $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('message');
-        $rootNode->children()->scalarNode('FromEmail')->isRequired();
-        $rootNode->children()->scalarNode('FromName');
+        $rootNode = $treeBuilder->root('Messages');
+        $this->buildFromSection($rootNode);
         $rootNode->children()->scalarNode('Sender');
-        $this->buildRecipientsSection($rootNode);
-        $rootNode->children()->scalarNode('To');
-        $rootNode->children()->scalarNode('Cc');
-        $rootNode->children()->scalarNode('Bcc');
+        $this->buildToSection($rootNode);
+        $this->buildCcSection($rootNode);
+        $this->buildBccSection($rootNode);
         $rootNode->children()->scalarNode('Subject')->isRequired();
-        $rootNode->validate()->ifTrue(function (array $message) {
-            $html = (isset($message['Html-part']) ? true : false);
-            $text = (isset($message['Text-part']) ? true : false);
-            $templateId = (isset($message['Mj-TemplateID']) ? true : false);
-            return ($html || $text || $templateId);
-        })->thenInvalid('Html-part or Text-part must be provided');
-        $rootNode->children()->scalarNode('Html_part');
-        $rootNode->children()->scalarNode('Text_part');
-        $rootNode->children()->scalarNode('Mj_TemplateID');
-        $rootNode->children()->booleanNode('Mj_TemplateLanguage');
-        $rootNode->children()->scalarNode('Mj_TemplateErrorReporting');
-        $rootNode->children()->scalarNode('Mj_TemplateErrorDeliver');
+        $rootNode->children()->scalarNode('HTMLPart');
+        $rootNode->children()->scalarNode('TextPart');
+        $rootNode->children()->scalarNode('TemplateID');
+        $rootNode->children()->booleanNode('TemplateLanguage');
+        $rootNode->children()->scalarNode('TemplateErrorReporting');
+        $rootNode->children()->scalarNode('TemplateErrorDeliver');
         $this->buildAttachmentsSection($rootNode);
         $this->buildInlineAttachmentsSection($rootNode);
-        $rootNode->children()->integerNode('Mj_prio');
-        $rootNode->children()->scalarNode('Mj_campaign');
-        $rootNode->children()->booleanNode('Mj_deduplicatecampaign');
-        $rootNode->children()->integerNode('Mj_trackopen');
-        $rootNode->children()->integerNode('Mj_trackclick');
-        $rootNode->children()->scalarNode('Mj_CustomID');
-        $rootNode->children()->scalarNode('Mj_EventPayLoad');
+        $rootNode->children()->integerNode('Priority');
+        $rootNode->children()->scalarNode('CustomCampaign');
+        $rootNode->children()->booleanNode('DeduplicateCampaign');
+        $rootNode->children()->integerNode('TrackOpens');
+        $rootNode->children()->integerNode('TrackClicks');
+        $rootNode->children()->scalarNode('CustomID');
+        $rootNode->children()->scalarNode('EventPayload');
+        $rootNode->children()->scalarNode('MonitoringCategory');
         $rootNode->children()->arrayNode('Headers')->ignoreExtraKeys();
         $this->buildVarsSection($rootNode);
+        $this->buildReplyToSection($rootNode);
         // for bulk: https://dev.mailjet.com/guides/#sending-in-bulk
         $rootNode->children()->arrayNode('Messages')->ignoreExtraKeys();
 
@@ -56,10 +50,54 @@ class MessageSendConfiguration implements ConfigurationInterface
     /**
      * @param ArrayNodeDefinition $rootNode
      */
-    protected function buildRecipientsSection(ArrayNodeDefinition $rootNode)
+    protected function buildFromSection(ArrayNodeDefinition $rootNode)
     {
         /** @var ArrayNodeDefinition $metadataNode */
-        $metadataNode = $rootNode->children()->arrayNode('Recipients')->prototype('array');
+        $metadataNode = $rootNode->children()->arrayNode('From')->isRequired();
+        $metadataNode->children()->scalarNode('Email')->isRequired();
+        $metadataNode->children()->scalarNode('Name');
+    }
+
+    /**
+     * @param ArrayNodeDefinition $rootNode
+     */
+    protected function buildToSection(ArrayNodeDefinition $rootNode)
+    {
+        /** @var ArrayNodeDefinition $metadataNode */
+        $metadataNode = $rootNode->children()->arrayNode('To')->prototype('array');
+        $metadataNode->children()->scalarNode('Email')->isRequired();
+        $metadataNode->children()->scalarNode('Name');
+    }
+
+    /**
+     * @param ArrayNodeDefinition $rootNode
+     */
+    protected function buildCcSection(ArrayNodeDefinition $rootNode)
+    {
+        /** @var ArrayNodeDefinition $metadataNode */
+        $metadataNode = $rootNode->children()->arrayNode('Cc')->prototype('array');
+        $metadataNode->children()->scalarNode('Email')->isRequired();
+        $metadataNode->children()->scalarNode('Name');
+    }
+
+    /**
+     * @param ArrayNodeDefinition $rootNode
+     */
+    protected function buildBccSection(ArrayNodeDefinition $rootNode)
+    {
+        /** @var ArrayNodeDefinition $metadataNode */
+        $metadataNode = $rootNode->children()->arrayNode('Bcc')->prototype('array');
+        $metadataNode->children()->scalarNode('Email')->isRequired();
+        $metadataNode->children()->scalarNode('Name');
+    }
+
+    /**
+     * @param ArrayNodeDefinition $rootNode
+     */
+    protected function buildReplyToSection(ArrayNodeDefinition $rootNode)
+    {
+        /** @var ArrayNodeDefinition $metadataNode */
+        $metadataNode = $rootNode->children()->arrayNode('ReplyTo');
         $metadataNode->children()->scalarNode('Email')->isRequired();
         $metadataNode->children()->scalarNode('Name');
     }
@@ -70,7 +108,7 @@ class MessageSendConfiguration implements ConfigurationInterface
     protected function buildVarsSection(ArrayNodeDefinition $rootNode)
     {
         /** @var ArrayNodeDefinition $mergeNode */
-        $mergeNode = $rootNode->children()->arrayNode('Vars')->ignoreExtraKeys();
+        $mergeNode = $rootNode->children()->arrayNode('Variables')->ignoreExtraKeys();
     }
 
     /**
@@ -80,9 +118,9 @@ class MessageSendConfiguration implements ConfigurationInterface
     {
         /** @var ArrayNodeDefinition $attachmentsNode */
         $attachmentsNode = $rootNode->children()->arrayNode('Attachments')->prototype('array');
-        $attachmentsNode->children()->scalarNode('Content_type')->isRequired();
+        $attachmentsNode->children()->scalarNode('ContentType')->isRequired();
         $attachmentsNode->children()->scalarNode('Filename')->isRequired();
-        $attachmentsNode->children()->scalarNode('content')->isRequired();
+        $attachmentsNode->children()->scalarNode('Base64Content')->isRequired();
     }
 
     /**
@@ -92,8 +130,8 @@ class MessageSendConfiguration implements ConfigurationInterface
     {
         /** @var ArrayNodeDefinition $attachmentsNode */
         $attachmentsNode = $rootNode->children()->arrayNode('Inline_attachments')->prototype('array');
-        $attachmentsNode->children()->scalarNode('Content_type')->isRequired();
+        $attachmentsNode->children()->scalarNode('ContentType')->isRequired();
         $attachmentsNode->children()->scalarNode('Filename')->isRequired();
-        $attachmentsNode->children()->scalarNode('content')->isRequired();
+        $attachmentsNode->children()->scalarNode('Base64Content')->isRequired();
     }
 }
