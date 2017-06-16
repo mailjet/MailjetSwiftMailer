@@ -1,8 +1,8 @@
 <?php
-namespace Welp\MailjetSwiftMailer\Tests\SwiftMailer;
+namespace Mailjet\MailjetSwiftMailer\Tests\SwiftMailer;
 
 use PHPUnit\Framework\TestCase;
-use Welp\MailjetSwiftMailer\SwiftMailer\MailjetTransport;
+use Mailjet\MailjetSwiftMailer\SwiftMailer\MailjetTransport;
 use Symfony\Component\Config\Definition\Processor;
 
 class MailjetTransportTest extends TestCase

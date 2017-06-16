@@ -1,9 +1,9 @@
 # MailjetSwiftMailer
 
-[![Build Status](https://travis-ci.org/welpdev/MailjetSwiftMailer.svg?branch=master)](https://travis-ci.org/welpdev/MailjetSwiftMailer)
-[![Packagist](https://img.shields.io/packagist/v/welp/mailjet-swiftmailer.svg)](https://packagist.org/packages/welp/mailjet-swiftmailer)
-[![Packagist](https://img.shields.io/packagist/dt/welp/mailjet-swiftmailer.svg)](https://packagist.org/packages/welp/mailjet-swiftmailer)
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/welpdev/MailjetSwiftMailer/blob/master/LICENSE.md)
+[![Build Status](https://travis-ci.org/mailjet/MailjetSwiftMailer.svg?branch=master)](https://travis-ci.org/mailjet/MailjetSwiftMailer)
+[![Packagist](https://img.shields.io/packagist/v/mailjet/mailjet-swiftmailer.svg)](https://packagist.org/packages/mailjet/mailjet-swiftmailer)
+[![Packagist](https://img.shields.io/packagist/dt/mailjet/mailjet-swiftmailer.svg)](https://packagist.org/packages/mailjet/mailjet-swiftmailer)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mailjet/MailjetSwiftMailer/blob/master/LICENSE.md)
 
 A SwiftMailer transport implementation for Mailjet
 
@@ -16,7 +16,7 @@ If you found any problem, feel free to open an issue!
 Require the package with composer
 
 ```bash
-composer require welp/mailjet-swiftmailer
+composer require mailjet/mailjet-swiftmailer
 ```
 
 ## Usage Example
@@ -99,26 +99,26 @@ Note: does not work with Spool (SwiftMailer removed bulkSend from its API).
 
 If you want to use MailjetTransport in your Symfony project follow these small steps:
 
-1. `composer require welp/mailjet-swiftmailer`
+1. `composer require mailjet/mailjet-swiftmailer`
 2. Into your `services.yml`, register MailjetTransport:
 
 ```yaml
-swiftmailer.mailer.transport.welp_mailjet:
-    class: Welp\MailjetSwiftMailer\SwiftMailer\MailjetTransport
+swiftmailer.mailer.transport.mailjet:
+    class: Mailjet\MailjetSwiftMailer\SwiftMailer\MailjetTransport
     arguments:
         - "@swiftmailer.transport.eventdispatcher.welp_mailjet"
-        - "%welp_mailjet.api_key%"
-        - "%welp_mailjet.secret_key%"
+        - "%mailjet.api_key%"
+        - "%mailjet.secret_key%"
 ```
 
-Note: We set `welp_mailjet.api_key` and `welp_mailjet.secret_key` into parameters.yml
+Note: We set `mailjet.api_key` and `mailjet.secret_key` into parameters.yml
 
 3. Finally, configure SwiftMailer in your `config.yml`:
 
 ```yaml
 # Swiftmailer Configuration
 swiftmailer:
-    transport: welp_mailjet
+    transport: mailjet
 ```
 
 ## Mailjet references

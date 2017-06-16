@@ -13,3 +13,8 @@
 - [ ] Moar tests!!
 - [ ] Handle Bulk message sending
 - [ ] study and implement Mailjet send API v3.1 (currently in beta test)
+
+## Contributors
+
+* Original author: [Titouan BENOIT](https://github.com/Nightbr)
+* Mailjet API <api@mailjet.com>
