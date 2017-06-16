@@ -1,5 +1,5 @@
 <?php
-namespace Welp\MailjetSwiftMailer\SwiftMailer;
+namespace Mailjet\MailjetSwiftMailer\SwiftMailer;
 
 use \Swift_Events_EventDispatcher;
 use \Swift_Events_EventListener;
