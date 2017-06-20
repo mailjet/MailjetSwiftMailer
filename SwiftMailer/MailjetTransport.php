@@ -25,7 +25,7 @@ class MailjetTransport implements Swift_Transport
      * Mailjet client
      * @var \Mailjet\Client
      */
-    protected $mailjetClient;
+    protected $mailjetClient = null;
 
     /**
      * Mailjet API Key
@@ -72,9 +72,6 @@ class MailjetTransport implements Swift_Transport
         $this->apiSecret = $apiSecret;
         $this->call = $call;
         $this->clientOptions = $clientOptions;
-
-        // create Mailjet client
-        $this->mailjetClient = $this->createMailjetClient();
     }
 
     /**
@@ -124,8 +121,10 @@ class MailjetTransport implements Swift_Transport
         // extract Mailjet Message from SwiftMailer Message
         $mailjetMessage = $this->getMailjetMessage($message);
 
-        dump($this->mailjetClient);
-
+        if(is_null($this->mailjetClient)){
+            // create Mailjet client
+            $this->mailjetClient = $this->createMailjetClient();
+        }
 
         try {
             // send API call
@@ -173,6 +172,11 @@ class MailjetTransport implements Swift_Transport
             // extract Mailjet Message from SwiftMailer Message
             $mailjetMessage = $this->getMailjetMessage($message);
             array_push($bodyRequest['Messages'], $mailjetMessage);
+        }
+
+        if(is_null($this->mailjetClient)){
+            // create Mailjet client
+            $this->mailjetClient = $this->createMailjetClient();
         }
 
         try {
