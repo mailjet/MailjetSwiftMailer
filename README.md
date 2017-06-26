@@ -7,7 +7,7 @@
 
 A SwiftMailer transport implementation for Mailjet
 ([NEW] we now support send API v3.1 )
-[Mailjet Send API v3 to v3.1](https://dev.mailjet.com/beta/#send-api-v3-to-v3-1)
+[Mailjet Send API v3 to v3.1](https://dev.mailjet.com/guides/#send-api-v3-1-beta)
 *Compatible Mailjet send API V3 and V3.1*
 
 If you found any problem, feel free to open an issue!
