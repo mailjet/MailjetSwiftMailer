@@ -29,21 +29,20 @@ composer require mailjet/mailjet-swiftmailer
 
 ```php
 $transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret);
-$transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3.1', 'call' => true]); // optional
-(Send API v3 is selected by default)
+$transport->setClientOptions(['url' => "api.mailjet.com", 'version' => 'v3.1', 'call' => true]); // optional
+
 
 $transport->send($message);
 ```
 
-Note: with this version, you must configure the v3.1 API version /!\
 
+(Send API v3 is selected by default)
 ## Mailjet client custom configuration
 
 You can pass an array in transport's constructor or use `setClientOptions` function:
 
 ```php
 $clientOptions = ['url' => "api.mailjet.com", 'version' => 'v3.1', 'call' => false];
-(Send API v3 is selected by default)
 $transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret, $clientOptions);
 
 
