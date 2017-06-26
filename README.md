@@ -16,6 +16,7 @@ If you found any problem, feel free to open an issue!
 
 * Adding URL tags
 * Sandbox Mode
+* Improve unit-tests (lots of code duplications)
 
 ## Installation
 
@@ -29,7 +30,7 @@ composer require mailjet/mailjet-swiftmailer
 
 ```php
 $transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret);
-$transport->setClientOptions(['url' => "api.mailjet.com", 'version' => 'v3.1', 'call' => true]); // optional
+$transport->setClientOptions(['url' => "api.mailjet.com", 'version' => 'v3.1', 'call' => true]);
 
 
 $transport->send($message);

@@ -124,8 +124,8 @@ class MailjetTransportv31Test extends TestCase {
         $message->getHeaders()->addTextHeader('X-Mailjet-Prio', 3);
         $message->getHeaders()->addTextHeader('X-Mailjet-Campaign', 'azertyuiop');
         $message->getHeaders()->addTextHeader('X-Mailjet-DeduplicateCampaign', false);
-        $message->getHeaders()->addTextHeader('X-Mailjet-TrackOpen', 1);
-        $message->getHeaders()->addTextHeader('X-Mailjet-TrackClick', 2);
+        $message->getHeaders()->addTextHeader('X-Mailjet-TrackOpen', 'account_default');
+        $message->getHeaders()->addTextHeader('X-Mailjet-TrackClick', 'account_default');
         $message->getHeaders()->addTextHeader('X-MJ-CustomID', 'PassengerEticket1234');
         $message->getHeaders()->addTextHeader('X-MJ-EventPayLoad', 'Eticket,1234,row,15,seat,B');
         $message->getHeaders()->addTextHeader('X-MJ-Vars', array('today' => 'monday'));
@@ -141,8 +141,8 @@ class MailjetTransportv31Test extends TestCase {
         $this->assertEquals(3, $mailjetMessage['Priority']);
         $this->assertEquals('azertyuiop', $mailjetMessage['CustomCampaign']);
         $this->assertEquals(false, $mailjetMessage['DeduplicateCampaign']);
-        $this->assertEquals(1, $mailjetMessage['TrackOpens']);
-        $this->assertEquals(2, $mailjetMessage['TrackClicks']);
+        $this->assertEquals('account_default', $mailjetMessage['TrackOpens']);
+        $this->assertEquals('account_default', $mailjetMessage['TrackClicks']);
         $this->assertEquals('PassengerEticket1234', $mailjetMessage['CustomID']);
         $this->assertEquals('Eticket,1234,row,15,seat,B', $mailjetMessage['EventPayload']);
         $this->assertEquals(array('today' => 'monday'), $mailjetMessage['Variables']);

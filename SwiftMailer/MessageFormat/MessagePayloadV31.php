@@ -1,14 +1,14 @@
 <?php
 
-namespace Mailjet\MailjetSwiftMailer\SwiftMailer;
+namespace Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat;
 
 use \Swift_Mime_Message;
 use \Swift_Attachment;
 use \Swift_MimePart;
 
-class messagePayloadV3 implements messageFormatStrategy {
+class MessagePayloadV31 extends BaseMessagePayload {
 
-    private $version = 'v3';
+    private $version = 'v3.1';
 
     /**
      * https://dev.mailjet.com/guides/#send-api-json-properties
@@ -19,40 +19,44 @@ class messagePayloadV3 implements messageFormatStrategy {
      * @throws \Swift_SwiftException
      */
     public function getMailjetMessage(Swift_Mime_Message $message) {
-       $contentType = Utils::getMessagePrimaryContentType($message);
+        $contentType = $this->getMessagePrimaryContentType($message);
         $fromAddresses = $message->getFrom();
         $fromEmails = array_keys($fromAddresses);
         $toAddresses = $message->getTo();
         $ccAddresses = $message->getCc() ? $message->getCc() : [];
         $bccAddresses = $message->getBcc() ? $message->getBcc() : [];
+
         $attachments = array();
         $inline_attachments = array();
+
         // Process Headers
-        $customHeaders = Utils::prepareHeaders($message, $this->getMailjetHeaders());
-        $userDefinedHeaders = Utils::findUserDefinedHeaders($message);
-        if ($replyTo = $this->getReplyTo($message)) {
-            $userDefinedHeaders = array_merge($userDefinedHeaders, array('Reply-To' => $replyTo));
-        }
+        $customHeaders = $this->prepareHeaders($message, $this->getMailjetHeaders());
+        $userDefinedHeaders = $this->findUserDefinedHeaders($message);
+
+
         // @TODO only Format To, Cc, Bcc
-        $to = "";
+        //@TODO array_push is not recommended
+        $to = array();
         foreach ($toAddresses as $toEmail => $toName) {
-            $to .= "$toName <$toEmail>";
+            array_push($to, ['Email' => $toEmail, 'Name' => $toName]);
         }
-        $cc = "";
+        $cc = array();
         foreach ($ccAddresses as $ccEmail => $ccName) {
-            $cc .= "$toName <$toEmail>";
+            array_push($cc, ['Email' => $ccEmail, 'Name' => $ccName]);
         }
-        $bcc = "";
+        $bcc = array();
         foreach ($bccAddresses as $bccEmail => $bccName) {
-            $bcc .= "$toName <$toEmail>";
+            array_push($bcc, ['Email' => $bccEmail, 'Name' => $bccName]);
         }
+
         // Handle content
-         $bodyHtml = $bodyText = null;
+        $bodyHtml = $bodyText = null;
         if ($contentType === 'text/plain') {
             $bodyText = $message->getBody();
         } else {
             $bodyHtml = $message->getBody();
         }
+
 
         // Handle attachments
         foreach ($message->getChildren() as $child) {
@@ -60,20 +64,21 @@ class messagePayloadV3 implements messageFormatStrategy {
                 //Handle regular attachments
                 if ($child->getDisposition() === "attachment") {
                     $attachments[] = array(
-                        'Content-type' => $child->getContentType(),
+                        'ContentType' => $child->getContentType(),
                         'Filename' => $child->getFilename(),
-                        'content' => base64_encode($child->getBody())
+                        'Base64Content' => base64_encode($child->getBody())
                     );
                 }
                 //Handle inline attachments
                 elseif ($child->getDisposition() === "inline") {
                     $inline_attachments[] = array(
-                        'Content-type' => $child->getContentType(),
+                        'ContentType' => $child->getContentType(),
                         'Filename' => $child->getFilename(),
-                        'content' => base64_encode($child->getBody())
+                        'ContentID' => $child->getId(),
+                        'Base64Content' => base64_encode($child->getBody())
                     );
                 }
-            } elseif ($child instanceof Swift_MimePart && Utils::supportsContentType($child->getContentType())) {
+            } elseif ($child instanceof Swift_MimePart && $this->supportsContentType($child->getContentType())) {
                 if ($child->getContentType() == "text/html") {
                     $bodyHtml = $child->getBody();
                 } elseif ($child->getContentType() == "text/plain") {
@@ -81,33 +86,48 @@ class messagePayloadV3 implements messageFormatStrategy {
                 }
             }
         }
+
         $mailjetMessage = array(
-            'FromEmail' => $fromEmails[0],
-            'FromName' => $fromAddresses[$fromEmails[0]],
+            'From' => array(
+                'Email' => $fromEmails[0],
+                'Name' => $fromAddresses[$fromEmails[0]]
+            ),
+            'To' => $to,
             'Subject' => $message->getSubject(),
-            'Recipients' => $this->getRecipients($message)
         );
+        if (!empty($cc)) {
+            $mailjetMessage['Cc'] = $cc;
+        }
+        if (!empty($bcc)) {
+            $mailjetMessage['Bcc'] = $bcc;
+        }
         if (!is_null($bodyHtml)) {
-            $mailjetMessage['Html-part'] = $bodyHtml;
+            $mailjetMessage['HTMLPart'] = $bodyHtml;
         }
         if (!is_null($bodyText)) {
-            $mailjetMessage['Text-part'] = $bodyText;
+            $mailjetMessage['TextPart'] = $bodyText;
         }
+        if ($replyTo = $this->getReplyTo($message)) {
+            $mailjetMessage['ReplyTo'] = $replyTo;
+        }
+
         if (count($userDefinedHeaders) > 0) {
             $mailjetMessage['Headers'] = $userDefinedHeaders;
         }
+
         if (count($customHeaders) > 0) {
             $mailjetMessage = array_merge($mailjetMessage, $customHeaders);
         }
+
         if (count($attachments) > 0) {
             $mailjetMessage['Attachments'] = $attachments;
         }
         if (count($inline_attachments) > 0) {
-            $mailjetMessage['Inline_attachments'] = $inline_attachments;
+            $mailjetMessage['InlinedAttachments'] = $inline_attachments;
         }
 
-        // @TODO bulk messages
-        return $mailjetMessage;
+
+        return array('Messages' => array($mailjetMessage));
     }
 
     /**
@@ -117,18 +137,19 @@ class messagePayloadV3 implements messageFormatStrategy {
      */
     private static function getMailjetHeaders() {
         return array(
-            'X-MJ-TemplateID' => 'Mj-TemplateID',
-            'X-MJ-TemplateLanguage' => 'Mj-TemplateLanguage',
-            'X-MJ-TemplateErrorReporting' => 'MJ-TemplateErrorReporting',
-            'X-MJ-TemplateErrorDeliver' => 'MJ-TemplateErrorDeliver',
-            'X-Mailjet-Prio' => 'Mj-Prio',
-            'X-Mailjet-Campaign' => 'Mj-campaign',
-            'X-Mailjet-DeduplicateCampaign' => 'Mj-deduplicatecampaign',
-            'X-Mailjet-TrackOpen' => 'Mj-trackopen',
-            'X-Mailjet-TrackClick' => 'Mj-trackclick',
-            'X-MJ-CustomID' => 'Mj-CustomID',
-            'X-MJ-EventPayLoad' => 'Mj-EventPayLoad',
-            'X-MJ-Vars' => 'Vars'
+            'X-MJ-TemplateID' => 'TemplateID',
+            'X-MJ-TemplateLanguage' => 'TemplateLanguage',
+            'X-MJ-TemplateErrorReporting' => 'TemplateErrorReporting',
+            'X-MJ-TemplateErrorDeliver' => 'TemplateErrorDeliver',
+            'X-Mailjet-Prio' => 'Priority',
+            'X-Mailjet-Campaign' => 'CustomCampaign',
+            'X-Mailjet-DeduplicateCampaign' => 'DeduplicateCampaign',
+            'X-Mailjet-TrackOpen' => 'TrackOpens',
+            'X-Mailjet-TrackClick' => 'TrackClicks',
+            'X-MJ-CustomID' => 'CustomID',
+            'X-MJ-EventPayLoad' => 'EventPayload',
+            'X-MJ-MonitoringCategory' => 'MonitoringCategory',
+            'X-MJ-Vars' => 'Variables'
         );
     }
 
@@ -137,40 +158,22 @@ class messagePayloadV3 implements messageFormatStrategy {
      *
      * @param Swift_Mime_Message $message
      *
-     * @return string|null
+     * @return array|null
      */
-    protected function getReplyTo(Swift_Mime_Message $message) {
+    private function getReplyTo(Swift_Mime_Message $message) {
         if (is_array($message->getReplyTo())) {
-            return current($message->getReplyTo()) . ' <' . key($message->getReplyTo()) . '>';
+            return array('Email' => key($message->getReplyTo()), 'Name' => current($message->getReplyTo()));
+        } elseif (is_string($message->getReplyTo())) {
+            return array('Email' => $message->getReplyTo());
+        } else {
+            return null;
         }
     }
-
 
     /**
-     * Get all the addresses this message should be sent to.
-     *
-     * @param Swift_Mime_Message $message
-     *
-     * @return array
+     * Returns the version of the message format
+     * @return version of the message format
      */
-    protected function getRecipients(Swift_Mime_Message $message) {
-        $to = [];
-        if ($message->getTo()) {
-            $to = array_merge($to, $message->getTo());
-        }
-        if ($message->getCc()) {
-            $to = array_merge($to, $message->getCc());
-        }
-        if ($message->getBcc()) {
-            $to = array_merge($to, $message->getBcc());
-        }
-        $recipients = [];
-        foreach ($to as $address => $name) {
-            $recipients[] = ['Email' => $address, 'Name' => $name];
-        }
-        return $recipients;
-    }
-
     public function getVersion() {
 
         return $this->version;

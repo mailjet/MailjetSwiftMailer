@@ -1,0 +1,12 @@
+{
+    "FromEmail":"pilot@mailjet.com",
+    "FromName":"Mailjet Pilot",
+    "Subject":"Your email flight plan!",
+    "MJ-TemplateID":"1",
+    "MJ-TemplateLanguage":true,
+    "Recipients":[
+            {
+                    "Email": "passenger@mailjet.com"
+            }
+    ]
+}

@@ -7,16 +7,11 @@ use \Swift_Events_EventListener;
 use \Swift_Events_SendEvent;
 use \Swift_Mime_Message;
 use \Swift_Transport;
-use \Swift_Attachment;
-use \Swift_MimePart;
 use Mailjet\Resources;
+use Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat\MessagePayloadV31;
+use Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat\MessagePayloadV3;
 
-interface messageFormatStrategy {
 
-    public function getMailjetMessage(Swift_Mime_Message $message);
-
-    public function getVersion();
-}
 
 /**
  * A SwiftMailer transport implementation for Mailjet
@@ -35,7 +30,7 @@ class MailjetTransport implements Swift_Transport {
     protected $mailjetClient = null;
 
     /**
-     * @var messageFormatStrategy
+     * @var Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat\MessageFormatStrategyInterface
      */
     public $messageFormat;
 
@@ -335,12 +330,12 @@ class MailjetTransport implements Swift_Transport {
 
         if (isset($this->clientOptions['version'])) {
             if ($this->clientOptions['version'] === 'v3.1') {
-                $this->messageFormat = new messagePayloadV31();
+                $this->messageFormat = new MessagePayloadV31();
             } else {//v3 is default format
-                $this->messageFormat = new messagePayloadV3();
+                $this->messageFormat = new MessagePayloadV3();
             }
         } else {//If no options were provided set the message format to v3 as default
-            $this->messageFormat = new messagePayloadV3();
+            $this->messageFormat = new MessagePayloadV3();
         }
         return $this;
     }
