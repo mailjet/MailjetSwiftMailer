@@ -106,7 +106,7 @@ If you want to use MailjetTransport in your Symfony project follow these small s
 swiftmailer.mailer.transport.mailjet:
     class: Mailjet\MailjetSwiftMailer\SwiftMailer\MailjetTransport
     arguments:
-        - "@swiftmailer.transport.eventdispatcher.welp_mailjet"
+        - "@swiftmailer.transport.eventdispatcher.mailjet"
         - "%mailjet.api_key%"
         - "%mailjet.secret_key%"
 ```
@@ -120,6 +120,33 @@ Note: We set `mailjet.api_key` and `mailjet.secret_key` into parameters.yml
 swiftmailer:
     transport: mailjet
 ```
+
+Note: You can also inject your own `Mailjet\Client`:
+
+```yaml
+mailjet.transactionnal.client:
+    class: "%mailjet.client.class%"
+    arguments:
+        - "%mailjet.api_key%"
+        - "%mailjet.secret_key%"
+        - %mailjet.transactionnal.call%
+        - %mailjet.transactionnal.options%
+
+swiftmailer.transport.eventdispatcher.mailjet:
+    class: Swift_Events_SimpleEventDispatcher
+
+swiftmailer.mailer.transport.mailjet:
+    class: Mailjet\MailjetSwiftMailer\SwiftMailer\MailjetTransport
+    arguments:
+        - "@swiftmailer.transport.eventdispatcher.mailjet"
+        - "%mailjet.api_key%"
+        - "%mailjet.secret_key%"
+        - %mailjet.transactionnal.call%
+        - %mailjet.transactionnal.options%
+    calls:
+        - method: setExternalMailjetClient
+          arguments:
+              - '@mailjet.transactionnal.client'
 
 ## Mailjet references
 
