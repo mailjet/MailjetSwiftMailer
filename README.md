@@ -6,10 +6,17 @@
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mailjet/MailjetSwiftMailer/blob/master/LICENSE.md)
 
 A SwiftMailer transport implementation for Mailjet
-
-*Compatible Mailjet send API V3*
+([NEW] we now support send API v3.1 )
+[Mailjet Send API v3.1](https://dev.mailjet.com/guides/#send-api-v3-1-beta)
+*Compatible Mailjet send API V3 and V3.1*
 
 If you found any problem, feel free to open an issue!
+
+## TODO
+
+* Adding URL tags
+* Sandbox Mode
+* Improve unit-tests (lots of code duplications)
 
 ## Installation
 
@@ -23,22 +30,26 @@ composer require mailjet/mailjet-swiftmailer
 
 ```php
 $transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret);
-$transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3', 'call' => true]); // optional
+$transport->setClientOptions(['url' => "api.mailjet.com", 'version' => 'v3.1', 'call' => true]);
+
 
 $transport->send($message);
 ```
 
+
+(Send API v3 is selected by default)
 ## Mailjet client custom configuration
 
 You can pass an array in transport's constructor or use `setClientOptions` function:
 
 ```php
-$clientOptions = ['url' => "www.mailjet.com", 'version' => 'v3', 'call' => false];
+$clientOptions = ['url' => "api.mailjet.com", 'version' => 'v3.1', 'call' => false];
 $transport = new MailjetTransport($dispatchEvent, $apiKey, $apiSecret, $clientOptions);
+
 
 or
 
-$transport->setClientOptions(['url' => "www.mailjet.com", 'version' => 'v3', 'call' => true]);
+$transport->setClientOptions(['url' => "api.mailjet.com", 'version' => 'v3.1', 'call' => true]);
 ```
 
 Properties of $options:
@@ -50,18 +61,7 @@ Properties of $options:
 
 ## Mailjet custom headers
 
-    X-MJ-TemplateID
-    X-MJ-TemplateLanguage
-    X-MJ-TemplateErrorReporting
-    X-MJ-TemplateErrorDeliver
-    X-Mailjet-Prio
-    X-Mailjet-Campaign
-    X-Mailjet-DeduplicateCampaign
-    X-Mailjet-TrackOpen
-    X-Mailjet-TrackClick
-    X-MJ-CustomID
-    X-MJ-EventPayLoad
-    X-MJ-Vars
+It is possible to set specific Mailjet headers or custom user-defined headers, through SwiftMailer. 
 
 For example:
 
@@ -69,7 +69,8 @@ For example:
 $message->getHeaders()->addTextHeader('X-MJ-TemplateLanguage', true);
 ```
 
-[Mailjet documentation](https://dev.mailjet.com/guides/#send-api-json-properties)
+[Mailjet Email Headers documentation v3](https://dev.mailjet.com/guides/#send-api-json-properties)
+[Mailjet Email Headers documentation v3.1](https://dev.mailjet.com/guides/#adding-email-headers)
 
 ## Mailjet bulk sending
 
@@ -103,17 +104,12 @@ If you want to use MailjetTransport in your Symfony project follow these small s
 2. Into your `services.yml`, register MailjetTransport:
 
 ```yaml
-swiftmailer.transport.eventdispatcher.mailjet:
-    class: Swift_Events_SimpleEventDispatcher
-
 swiftmailer.mailer.transport.mailjet:
     class: Mailjet\MailjetSwiftMailer\SwiftMailer\MailjetTransport
     arguments:
         - "@swiftmailer.transport.eventdispatcher.mailjet"
         - "%mailjet.api_key%"
         - "%mailjet.secret_key%"
-        - %mailjet.call%
-        - %mailjet.options%
 ```
 
 Note: We set `mailjet.api_key` and `mailjet.secret_key` into parameters.yml
@@ -157,7 +153,8 @@ swiftmailer.mailer.transport.mailjet:
 ## Mailjet references
 
 * [Mailjet PHP Wrapper](https://github.com/mailjet/mailjet-apiv3-php)
-* [Mailjet documentation: send transactional email](https://dev.mailjet.com/guides/#send-transactional-email)
+* [Mailjet documentation v3: send transactional email](https://dev.mailjet.com/guides/#send-transactional-email)
+* [Mailjet documentation v3.1: send transactional email](https://dev.mailjet.com/beta/#send-transactional-email)
 
 ## Execute Tests
 

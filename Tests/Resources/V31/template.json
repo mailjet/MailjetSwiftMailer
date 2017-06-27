@@ -1,0 +1,19 @@
+{
+    "Messages":[
+            {
+                    "From": {
+                            "Email": "pilot@mailjet.com",
+                            "Name": "Mailjet Pilot"
+                    },
+                    "To": [
+                            {
+                                    "Email": "passenger1@mailjet.com",
+                                    "Name": "passenger 1"
+                            }
+                    ],
+                    "TemplateID": 1,
+                    "TemplateLanguage": true,
+                    "Subject": "Your email flight plan!"
+            }
+    ]
+}

@@ -10,7 +10,7 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
  *
  * https://dev.mailjet.com/guides/#send-api-json-properties
  */
-class MessageSendConfiguration implements ConfigurationInterface
+class MessageSendConfiguration_v3 implements ConfigurationInterface
 {
     public function getConfigTreeBuilder()
     {
