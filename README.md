@@ -7,7 +7,7 @@
 
 A SwiftMailer transport implementation for Mailjet
 ([NEW] we now support send API v3.1 )
-[Mailjet Send API v3 to v3.1](https://dev.mailjet.com/guides/#send-api-v3-1-beta)
+[Mailjet Send API v3.1](https://dev.mailjet.com/guides/#send-api-v3-1-beta)
 *Compatible Mailjet send API V3 and V3.1*
 
 If you found any problem, feel free to open an issue!
@@ -61,7 +61,7 @@ Properties of $options:
 
 ## Mailjet custom headers
 
-It is possible to sent custom Mailjet headers through SwiftMailer. 
+It is possible to set specific Mailjet headers or custom user-defined headers, through SwiftMailer. 
 
 For example:
 
@@ -148,6 +148,7 @@ swiftmailer.mailer.transport.mailjet:
         - method: setExternalMailjetClient
           arguments:
               - '@mailjet.transactionnal.client'
+```
 
 ## Mailjet references
 
