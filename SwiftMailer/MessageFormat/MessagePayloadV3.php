@@ -22,9 +22,6 @@ class MessagePayloadV3 extends BaseMessagePayload {
         $contentType = $this->getMessagePrimaryContentType($message);
         $fromAddresses = $message->getFrom();
         $fromEmails = array_keys($fromAddresses);
-        $toAddresses = $message->getTo();
-        $ccAddresses = $message->getCc() ? $message->getCc() : [];
-        $bccAddresses = $message->getBcc() ? $message->getBcc() : [];
         $attachments = array();
         $inline_attachments = array();
         // Process Headers
@@ -33,19 +30,7 @@ class MessagePayloadV3 extends BaseMessagePayload {
         if ($replyTo = $this->getReplyTo($message)) {
             $userDefinedHeaders = array_merge($userDefinedHeaders, array('Reply-To' => $replyTo));
         }
-        // @TODO only Format To, Cc, Bcc
-        $to = "";
-        foreach ($toAddresses as $toEmail => $toName) {
-            $to .= "$toName <$toEmail>";
-        }
-        $cc = "";
-        foreach ($ccAddresses as $ccEmail => $ccName) {
-            $cc .= "$toName <$toEmail>";
-        }
-        $bcc = "";
-        foreach ($bccAddresses as $bccEmail => $bccName) {
-            $bcc .= "$toName <$toEmail>";
-        }
+
         // Handle content
         $bodyHtml = $bodyText = null;
         if ($contentType === 'text/plain') {
@@ -81,12 +66,20 @@ class MessagePayloadV3 extends BaseMessagePayload {
                 }
             }
         }
-        $mailjetMessage = array(
-            'FromEmail' => $fromEmails[0],
-            'FromName' => $fromAddresses[$fromEmails[0]],
-            'Subject' => $message->getSubject(),
-            'Recipients' => $this->getRecipients($message)
-        );
+        $mailjetMessage = array();
+        $recipients = $this->getRecipients($message);
+        if (count($recipients) > 0) {
+            $mailjetMessage['Recipients'] = $recipients;
+        }
+        if (!is_null($fromEmails[0])) {
+            $mailjetMessage['FromEmail'] = $fromEmails[0];
+        }
+        if (!is_null($message->getSubject())) {
+            $mailjetMessage['Subject'] = $message->getSubject();
+        }
+        if (!is_null($fromAddresses[$fromEmails[0]])) {
+            $mailjetMessage['FromName'] = $fromAddresses[$fromEmails[0]];
+        }
         if (!is_null($bodyHtml)) {
             $mailjetMessage['Html-part'] = $bodyHtml;
         }
@@ -165,7 +158,11 @@ class MessagePayloadV3 extends BaseMessagePayload {
         }
         $recipients = [];
         foreach ($to as $address => $name) {
-            $recipients[] = ['Email' => $address, 'Name' => $name];
+            if (!is_null($name)) {
+                $recipients[] = ['Email' => $address, 'Name' => $name];
+            } else {
+                $recipients[] = ['Email' => $address];
+            }
         }
         return $recipients;
     }

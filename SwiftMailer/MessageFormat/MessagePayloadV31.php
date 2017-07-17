@@ -38,15 +38,27 @@ class MessagePayloadV31 extends BaseMessagePayload {
         //@TODO array_push is not recommended
         $to = array();
         foreach ($toAddresses as $toEmail => $toName) {
-            array_push($to, ['Email' => $toEmail, 'Name' => $toName]);
+            if (!is_null($toName)) {
+                array_push($to, ['Email' => $toEmail, 'Name' => $toName]);
+            } else {
+                array_push($to, ['Email' => $toEmail]);
+            }
         }
         $cc = array();
         foreach ($ccAddresses as $ccEmail => $ccName) {
-            array_push($cc, ['Email' => $ccEmail, 'Name' => $ccName]);
+            if (!is_null($ccName)) {
+                array_push($cc, ['Email' => $ccEmail, 'Name' => $ccName]);
+            } else {
+                array_push($cc, ['Email' => $ccEmail]);
+            }
         }
         $bcc = array();
         foreach ($bccAddresses as $bccEmail => $bccName) {
-            array_push($bcc, ['Email' => $bccEmail, 'Name' => $bccName]);
+            if (!is_null($bccName)) {
+                array_push($bcc, ['Email' => $bccEmail, 'Name' => $bccName]);
+            } else {
+                array_push($bcc, ['Email' => $bccEmail]);
+            }
         }
 
         // Handle content
@@ -86,20 +98,29 @@ class MessagePayloadV31 extends BaseMessagePayload {
                 }
             }
         }
-
-        $mailjetMessage = array(
-            'From' => array(
-                'Email' => $fromEmails[0],
-                'Name' => $fromAddresses[$fromEmails[0]]
-            ),
-            'To' => $to,
-            'Subject' => $message->getSubject(),
+        $mailjetMessage = array();
+        $from = array(
+            'Email' => $fromEmails[0],
+            'Name' => $fromAddresses[$fromEmails[0]]
         );
+
+        if (!empty($from)) {
+            if (is_null($from['Name'])) {
+                unset($from['Name']);
+            }
+            $mailjetMessage['From'] = $from;
+        }
+        if (!empty($to)) {
+            $mailjetMessage['To'] = $to;
+        }
         if (!empty($cc)) {
             $mailjetMessage['Cc'] = $cc;
         }
         if (!empty($bcc)) {
             $mailjetMessage['Bcc'] = $bcc;
+        }
+        if (!is_null($message->getSubject())) {
+            $mailjetMessage['Subject'] = $message->getSubject();
         }
         if (!is_null($bodyHtml)) {
             $mailjetMessage['HTMLPart'] = $bodyHtml;
