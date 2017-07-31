@@ -1,14 +1,19 @@
 <?php
 
 namespace Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat;
-use \Swift_Mime_Message;
-abstract class BaseMessagePayload implements MessageFormatStrategyInterface {
 
+use \Swift_Mime_Message;
+
+abstract class BaseMessagePayload implements MessageFormatStrategyInterface
+{
     /**
      * @param Swift_Mime_Message $message
+     *
      * @return string
+     * @throws \ReflectionException
      */
-    protected static function getMessagePrimaryContentType(Swift_Mime_Message $message) {
+    protected static function getMessagePrimaryContentType(Swift_Mime_Message $message)
+    {
         $contentType = $message->getContentType();
         if (self::supportsContentType($contentType)) {
             return $contentType;
@@ -22,41 +27,48 @@ abstract class BaseMessagePayload implements MessageFormatStrategyInterface {
             $propRef->setAccessible(true);
             $contentType = $propRef->getValue($message);
         }
+
         return $contentType;
     }
 
     /**
      * @return array
      */
-    private static function getSupportedContentTypes() {
-        return array(
+    private static function getSupportedContentTypes()
+    {
+        return [
             'text/plain',
-            'text/html'
-        );
+            'text/html',
+        ];
     }
 
     /**
      * @param string $contentType
+     *
      * @return bool
      */
-    protected static function supportsContentType($contentType) {
+    protected static function supportsContentType($contentType)
+    {
         return in_array($contentType, self::getSupportedContentTypes());
     }
 
     /**
      * Extract Mailjet specific header
      * return an array of formatted data for Mailjet send API
-     * @param  Swift_Mime_Message $message
+     *
+     * @param Swift_Mime_Message $message
+     * @param array              $mailjetHeaders
+     *
      * @return array
      */
-    protected static function prepareHeaders(Swift_Mime_Message $message, $mailjetHeaders) {
+    protected static function prepareHeaders(Swift_Mime_Message $message, $mailjetHeaders)
+    {
         $messageHeaders = $message->getHeaders();
 
-        $mailjetData = array();
-
+        $mailjetData = [];
 
         foreach (array_keys($mailjetHeaders) as $headerName) {
-            /** @var \Swift_Mime_Headers_MailboxHeader $value */
+            /** @var \Swift_Mime_Headers_UnstructuredHeader $value */
             if (null !== $value = $messageHeaders->get($headerName)) {
                 // Handle custom headers
                 $mailjetData[$mailjetHeaders[$headerName]] = $value->getValue();
@@ -64,33 +76,39 @@ abstract class BaseMessagePayload implements MessageFormatStrategyInterface {
                 $messageHeaders->removeAll($headerName);
             }
         }
+
         return $mailjetData;
     }
 
     /**
      * Extract user defined starting with X-*
+     *
      * @param  Swift_Mime_Message $message
+     *
      * @return array
      */
-    protected static function findUserDefinedHeaders(Swift_Mime_Message $message) {
+    protected static function findUserDefinedHeaders(Swift_Mime_Message $message)
+    {
         $messageHeaders = $message->getHeaders();
-        $userDefinedHeaders = array();
+        $userDefinedHeaders = [];
         /* At this moment $messageHeaders is left with non-Mailjet specific headers
-         * 
+         *
          */
+        /** @var \Swift_Mime_Headers_AbstractHeader $header */
         foreach ($messageHeaders->getAll() as $header) {
             if (0 === strpos($header->getFieldName(), 'X-')) {
-                $userDefinedHeaders[$header->getFieldName()] = $header->getValue();
+                $userDefinedHeaders[$header->getFieldName()] = $header->getFieldBody();
             }
         }
+
         return $userDefinedHeaders;
     }
 
     /**
-
      * Convert Swift_Mime_SimpleMessage into Mailjet Payload for send API
      *
      * @param Swift_Mime_Message $message
+     *
      * @return array Mailjet Send Message
      * @throws \Swift_SwiftException
      */
@@ -98,7 +116,8 @@ abstract class BaseMessagePayload implements MessageFormatStrategyInterface {
 
     /**
      * Returns the version of the message format
-     * @return version of the message format
+     *
+     * @return string version of the message format
      */
     abstract public function getVersion();
 }
