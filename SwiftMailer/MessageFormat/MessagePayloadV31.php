@@ -2,7 +2,7 @@
 
 namespace Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat;
 
-use \Swift_Mime_Message;
+use \Swift_Mime_SimpleMessage;
 use \Swift_Attachment;
 use \Swift_MimePart;
 
@@ -14,11 +14,11 @@ class MessagePayloadV31 extends BaseMessagePayload {
      * https://dev.mailjet.com/guides/#send-api-json-properties
      * Convert Swift_Mime_SimpleMessage into Mailjet Payload for send API
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Mime_SimpleMessage $message
      * @return array Mailjet Send Message
      * @throws \Swift_SwiftException
      */
-    public function getMailjetMessage(Swift_Mime_Message $message) {
+    public function getMailjetMessage(Swift_Mime_SimpleMessage $message) {
         $contentType = $this->getMessagePrimaryContentType($message);
         $fromAddresses = $message->getFrom();
         $fromEmails = array_keys($fromAddresses);
@@ -177,11 +177,11 @@ class MessagePayloadV31 extends BaseMessagePayload {
     /**
      * Get the 'reply_to' headers and format as required by Mailjet.
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Mime_SimpleMessage $message
      *
      * @return array|null
      */
-    private function getReplyTo(Swift_Mime_Message $message) {
+    private function getReplyTo(Swift_Mime_SimpleMessage $message) {
         if (is_array($message->getReplyTo())) {
             return array('Email' => key($message->getReplyTo()), 'Name' => current($message->getReplyTo()));
         } elseif (is_string($message->getReplyTo())) {
