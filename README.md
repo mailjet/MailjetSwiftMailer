@@ -66,11 +66,18 @@ It is possible to set specific Mailjet headers or custom user-defined headers, t
 For example:
 
 ```php
-$message->getHeaders()->addTextHeader('X-MJ-TemplateLanguage', true);
+$headers = $message->getHeaders();
+
+$headers->addTextHeader('X-MJ-TemplateID', $templateId);
+$headers->addTextHeader('X-MJ-TemplateLanguage', true);
+$vars = array("myFirstVar" => "foo", "mySecondVar" => "bar");
+$headers->addTextHeader('X-MJ-Vars', json_encode($vars));
 ```
 
-[Mailjet Email Headers documentation v3](https://dev.mailjet.com/guides/#send-api-json-properties)
-[Mailjet Email Headers documentation v3.1](https://dev.mailjet.com/guides/#adding-email-headers)
+Note: You need to `json_encode`your array of variables in order to be compatible with SMTP transport. 
+
+* [Mailjet Email Headers documentation v3](https://dev.mailjet.com/guides/#send-api-json-properties)
+* [Mailjet Email Headers documentation v3.1](https://dev.mailjet.com/guides/#adding-email-headers)
 
 ## Mailjet bulk sending
 
