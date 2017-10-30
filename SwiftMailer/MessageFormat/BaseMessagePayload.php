@@ -71,7 +71,11 @@ abstract class BaseMessagePayload implements MessageFormatStrategyInterface
             /** @var \Swift_Mime_Headers_UnstructuredHeader $value */
             if (null !== $value = $messageHeaders->get($headerName)) {
                 // Handle custom headers
-                $mailjetData[$mailjetHeaders[$headerName]] = $value->getValue();
+                if($headerName == "X-MJ-Vars" && is_string($value->getValue())){
+                    $mailjetData[$mailjetHeaders[$headerName]] = json_decode($value->getValue());
+                } else {
+                    $mailjetData[$mailjetHeaders[$headerName]] = $value->getValue();
+                }
                 // remove Mailjet specific headers
                 $messageHeaders->removeAll($headerName);
             }
