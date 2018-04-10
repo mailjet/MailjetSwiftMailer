@@ -3,6 +3,7 @@
 namespace Mailjet\MailjetSwiftMailer\SwiftMailer;
 
 use Mailjet\Response;
+use Mailjet\Client;
 use \Swift_Events_EventDispatcher;
 use \Swift_Events_EventListener;
 use \Swift_Events_SendEvent;
@@ -243,10 +244,10 @@ class MailjetTransport implements Swift_Transport {
         }
 
         if (isset($this->clientOptions)) {
-            return new \Mailjet\Client($this->apiKey, $this->apiSecret, $this->call, $this->clientOptions);
+            return new Client($this->apiKey, $this->apiSecret, $this->call, $this->clientOptions);
         }
 
-        return new \Mailjet\Client($this->apiKey, $this->apiSecret, $this->call);
+        return new Client($this->apiKey, $this->apiSecret, $this->call);
     }
 
     /**
@@ -255,7 +256,7 @@ class MailjetTransport implements Swift_Transport {
      * @param \Mailjet\Client $client
      * @return \Mailjet\Client
      */
-    public function setExternalMailjetClient(\Mailjet\Client $client)
+    public function setExternalMailjetClient(Client $client)
     {
         $this->mailjetClient = $client;
         return $this->mailjetClient;
