@@ -30,7 +30,7 @@ class MailjetTransport implements Swift_Transport {
     protected $mailjetClient = null;
 
     /**
-     * @var Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat\MessageFormatStrategyInterface
+     * @var \Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat\MessageFormatStrategyInterface
      */
     public $messageFormat;
 
