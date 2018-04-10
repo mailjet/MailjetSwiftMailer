@@ -112,6 +112,7 @@ class MailjetTransport implements Swift_Transport {
      * @param Swift_Mime_Message $message
      * @param null $failedRecipients
      * @return int Number of messages sent
+     * @throws \Swift_TransportException
      */
     public function send(Swift_Mime_Message $message, &$failedRecipients = null) {
         $this->resultApi = null;
@@ -157,9 +158,10 @@ class MailjetTransport implements Swift_Transport {
     }
 
     /**
-     * @param array $message (of Swift_Mime_Message)
+     * @param array $messages (of Swift_Mime_Message)
      * @param null $failedRecipients
      * @return int Number of messages sent
+     * @throws \Swift_TransportException
      */
     public function bulkSend(array $messages, &$failedRecipients = null) {
 
@@ -257,7 +259,8 @@ class MailjetTransport implements Swift_Transport {
     /**
      * Inject an external Mailjet\Client
      * @method setExternalMailjetClient
-     * @param  \Mailjet\Client $client
+     * @param \Mailjet\Client $client
+     * @return \Mailjet\Client
      */
     public function setExternalMailjetClient(\Mailjet\Client $client)
     {
