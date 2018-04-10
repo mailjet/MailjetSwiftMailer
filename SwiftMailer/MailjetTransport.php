@@ -67,9 +67,11 @@ class MailjetTransport implements Swift_Transport {
     protected $resultApi;
 
     /**
+     * MailjetTransport constructor.
      * @param Swift_Events_EventDispatcher $eventDispatcher
      * @param string $apiKey
      * @param string $apiSecret
+     * @param bool $call
      * @param array $clientOptions
      */
     public function __construct(Swift_Events_EventDispatcher $eventDispatcher, $apiKey = null, $apiSecret = null, $call = true, array $clientOptions = []) {
