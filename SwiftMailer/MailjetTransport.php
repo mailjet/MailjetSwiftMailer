@@ -122,7 +122,6 @@ class MailjetTransport implements Swift_Transport {
                 return 0;
             }
         }
-        $sendCount = 0;
 
         // extract Mailjet Message from SwiftMailer Message
         $mailjetMessage = $this->messageFormat->getMailjetMessage($message);
@@ -167,7 +166,6 @@ class MailjetTransport implements Swift_Transport {
         $this->resultApi = null;
         $failedRecipients = (array) $failedRecipients;
         $bulkContainer = ['Messages' => []];
-        $sendCount = 0;
         foreach ($messages as $message) {
             // extract Mailjet Message from SwiftMailer Message
             $mailjetMessage = $this->messageFormat->getMailjetMessage($message);
