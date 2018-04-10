@@ -2,6 +2,8 @@
 
 namespace Mailjet\MailjetSwiftMailer\SwiftMailer;
 
+use Mailjet\Response;
+use Mailjet\Client;
 use \Swift_Events_EventDispatcher;
 use \Swift_Events_EventListener;
 use \Swift_Events_SendEvent;
@@ -30,7 +32,7 @@ class MailjetTransport implements Swift_Transport {
     protected $mailjetClient = null;
 
     /**
-     * @var Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat\MessageFormatStrategyInterface
+     * @var \Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat\MessageFormatStrategyInterface
      */
     public $messageFormat;
 
@@ -62,14 +64,16 @@ class MailjetTransport implements Swift_Transport {
     protected $clientOptions;
 
     /**
-     * @var array|null
+     * @var array|null|Response
      */
     protected $resultApi;
 
     /**
+     * MailjetTransport constructor.
      * @param Swift_Events_EventDispatcher $eventDispatcher
      * @param string $apiKey
      * @param string $apiSecret
+     * @param bool $call
      * @param array $clientOptions
      */
     public function __construct(Swift_Events_EventDispatcher $eventDispatcher, $apiKey = null, $apiSecret = null, $call = true, array $clientOptions = []) {
@@ -112,6 +116,7 @@ class MailjetTransport implements Swift_Transport {
      * @param Swift_Mime_Message $message
      * @param null $failedRecipients
      * @return int Number of messages sent
+     * @throws \Swift_TransportException
      */
     public function send(Swift_Mime_Message $message, &$failedRecipients = null) {
         $this->resultApi = null;
@@ -122,7 +127,6 @@ class MailjetTransport implements Swift_Transport {
                 return 0;
             }
         }
-        $sendCount = 0;
 
         // extract Mailjet Message from SwiftMailer Message
         $mailjetMessage = $this->messageFormat->getMailjetMessage($message);
@@ -158,16 +162,16 @@ class MailjetTransport implements Swift_Transport {
     }
 
     /**
-     * @param array $message (of Swift_Mime_Message)
+     * @param array $messages (of Swift_Mime_Message)
      * @param null $failedRecipients
      * @return int Number of messages sent
+     * @throws \Swift_TransportException
      */
     public function bulkSend(array $messages, &$failedRecipients = null) {
 
         $this->resultApi = null;
         $failedRecipients = (array) $failedRecipients;
         $bulkContainer = ['Messages' => []];
-        $sendCount = 0;
         foreach ($messages as $message) {
             // extract Mailjet Message from SwiftMailer Message
             $mailjetMessage = $this->messageFormat->getMailjetMessage($message);
@@ -185,23 +189,13 @@ class MailjetTransport implements Swift_Transport {
             }
         }
         // Create mailjetClient
-        $mailjetClient = $this->createMailjetClient();
-
+        $this->createMailjetClient();
         try {
             // send API call
             $this->resultApi = $this->mailjetClient->post(Resources::$Email, ['body' => $bulkContainer]);
-
             $sendCount = $this->findNumberOfSentMails();
-            // get result
-            if ($this->resultApi->success()) {
-                $resultStatus = Swift_Events_SendEvent::RESULT_SUCCESS;
-            } else {
-                $resultStatus = Swift_Events_SendEvent::RESULT_FAILED;
-            }
         } catch (\Exception $e) {
-            //$failedRecipients = $mailjetMessage['Recipients'];
             $sendCount = 0;
-            $resultStatus = Swift_Events_SendEvent::RESULT_FAILED;
         }
 
         return $sendCount;
@@ -250,18 +244,19 @@ class MailjetTransport implements Swift_Transport {
         }
 
         if (isset($this->clientOptions)) {
-            return new \Mailjet\Client($this->apiKey, $this->apiSecret, $this->call, $this->clientOptions);
+            return new Client($this->apiKey, $this->apiSecret, $this->call, $this->clientOptions);
         }
 
-        return new \Mailjet\Client($this->apiKey, $this->apiSecret, $this->call);
+        return new Client($this->apiKey, $this->apiSecret, $this->call);
     }
 
     /**
      * Inject an external Mailjet\Client
      * @method setExternalMailjetClient
-     * @param  \Mailjet\Client $client
+     * @param \Mailjet\Client $client
+     * @return \Mailjet\Client
      */
-    public function setExternalMailjetClient(\Mailjet\Client $client)
+    public function setExternalMailjetClient(Client $client)
     {
         $this->mailjetClient = $client;
         return $this->mailjetClient;
@@ -348,7 +343,7 @@ class MailjetTransport implements Swift_Transport {
     }
 
     /**
-     * @return null|array
+     * @return array|Response|null
      */
     public function getResultApi() {
         return $this->resultApi;
