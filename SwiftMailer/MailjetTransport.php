@@ -2,6 +2,7 @@
 
 namespace Mailjet\MailjetSwiftMailer\SwiftMailer;
 
+use Mailjet\Response;
 use \Swift_Events_EventDispatcher;
 use \Swift_Events_EventListener;
 use \Swift_Events_SendEvent;
@@ -62,7 +63,7 @@ class MailjetTransport implements Swift_Transport {
     protected $clientOptions;
 
     /**
-     * @var array|null
+     * @var array|null|Response
      */
     protected $resultApi;
 
@@ -187,8 +188,7 @@ class MailjetTransport implements Swift_Transport {
             }
         }
         // Create mailjetClient
-        $mailjetClient = $this->createMailjetClient();
-
+        $this->createMailjetClient();
         try {
             // send API call
             $this->resultApi = $this->mailjetClient->post(Resources::$Email, ['body' => $bulkContainer]);
@@ -342,7 +342,7 @@ class MailjetTransport implements Swift_Transport {
     }
 
     /**
-     * @return null|array
+     * @return array|Response|null
      */
     public function getResultApi() {
         return $this->resultApi;
