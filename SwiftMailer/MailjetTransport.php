@@ -201,7 +201,6 @@ class MailjetTransport implements Swift_Transport {
                 $resultStatus = Swift_Events_SendEvent::RESULT_FAILED;
             }
         } catch (\Exception $e) {
-            //$failedRecipients = $mailjetMessage['Recipients'];
             $sendCount = 0;
             $resultStatus = Swift_Events_SendEvent::RESULT_FAILED;
         }
