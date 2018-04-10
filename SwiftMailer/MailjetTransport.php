@@ -192,17 +192,9 @@ class MailjetTransport implements Swift_Transport {
         try {
             // send API call
             $this->resultApi = $this->mailjetClient->post(Resources::$Email, ['body' => $bulkContainer]);
-
             $sendCount = $this->findNumberOfSentMails();
-            // get result
-            if ($this->resultApi->success()) {
-                $resultStatus = Swift_Events_SendEvent::RESULT_SUCCESS;
-            } else {
-                $resultStatus = Swift_Events_SendEvent::RESULT_FAILED;
-            }
         } catch (\Exception $e) {
             $sendCount = 0;
-            $resultStatus = Swift_Events_SendEvent::RESULT_FAILED;
         }
 
         return $sendCount;
