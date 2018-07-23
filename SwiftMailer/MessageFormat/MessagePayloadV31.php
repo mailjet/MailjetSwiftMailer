@@ -2,23 +2,24 @@
 
 namespace Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat;
 
-use \Swift_Mime_Message;
+use \Swift_Message;
 use \Swift_Attachment;
 use \Swift_MimePart;
 
 class MessagePayloadV31 extends BaseMessagePayload {
 
-    private $version = 'v3.1';
+    private
+        $version = 'v3.1';
 
     /**
      * https://dev.mailjet.com/guides/#send-api-json-properties
      * Convert Swift_Mime_SimpleMessage into Mailjet Payload for send API
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Message $message
      * @return array Mailjet Send Message
      * @throws \Swift_SwiftException
      */
-    public function getMailjetMessage(Swift_Mime_Message $message) {
+    public function getMailjetMessage(Swift_Message $message) {
         $contentType = $this->getMessagePrimaryContentType($message);
         $fromAddresses = $message->getFrom();
         $fromEmails = array_keys($fromAddresses);
@@ -30,34 +31,33 @@ class MessagePayloadV31 extends BaseMessagePayload {
         $inline_attachments = array();
 
         // Process Headers
-        $customHeaders = $this->prepareHeaders($message, $this->getMailjetHeaders());
-        $userDefinedHeaders = $this->findUserDefinedHeaders($message);
+        $customHeaders = self::prepareHeaders($message, self::getMailjetHeaders());
+        $userDefinedHeaders = self::findUserDefinedHeaders($message);
 
 
         // @TODO only Format To, Cc, Bcc
-        //@TODO array_push is not recommended
         $to = array();
         foreach ($toAddresses as $toEmail => $toName) {
-            if (!is_null($toName)) {
-                array_push($to, ['Email' => $toEmail, 'Name' => $toName]);
+            if ($toName !== null) {
+                $to[] = ['Email' => $toEmail, 'Name' => $toName];
             } else {
-                array_push($to, ['Email' => $toEmail]);
+                $to[] = ['Email' => $toEmail];
             }
         }
         $cc = array();
         foreach ($ccAddresses as $ccEmail => $ccName) {
-            if (!is_null($ccName)) {
-                array_push($cc, ['Email' => $ccEmail, 'Name' => $ccName]);
+            if ($ccName !== null) {
+                $cc[] = ['Email' => $ccEmail, 'Name' => $ccName];
             } else {
-                array_push($cc, ['Email' => $ccEmail]);
+                $cc[] = ['Email' => $ccEmail];
             }
         }
         $bcc = array();
         foreach ($bccAddresses as $bccEmail => $bccName) {
-            if (!is_null($bccName)) {
-                array_push($bcc, ['Email' => $bccEmail, 'Name' => $bccName]);
+            if ($bccName !== null) {
+                $bcc[] = ['Email' => $bccEmail, 'Name' => $bccName];
             } else {
-                array_push($bcc, ['Email' => $bccEmail]);
+                $bcc[] = ['Email' => $bccEmail];
             }
         }
 
@@ -74,7 +74,7 @@ class MessagePayloadV31 extends BaseMessagePayload {
         foreach ($message->getChildren() as $child) {
             if ($child instanceof Swift_Attachment) {
                 //Handle regular attachments
-                if ($child->getDisposition() === "attachment") {
+                if ($child->getDisposition() === 'attachment') {
                     $attachments[] = array(
                         'ContentType' => $child->getContentType(),
                         'Filename' => $child->getFilename(),
@@ -82,7 +82,7 @@ class MessagePayloadV31 extends BaseMessagePayload {
                     );
                 }
                 //Handle inline attachments
-                elseif ($child->getDisposition() === "inline") {
+                elseif ($child->getDisposition() === 'inline') {
                     $inline_attachments[] = array(
                         'ContentType' => $child->getContentType(),
                         'Filename' => $child->getFilename(),
@@ -90,10 +90,10 @@ class MessagePayloadV31 extends BaseMessagePayload {
                         'Base64Content' => base64_encode($child->getBody())
                     );
                 }
-            } elseif ($child instanceof Swift_MimePart && $this->supportsContentType($child->getContentType())) {
-                if ($child->getContentType() == "text/html") {
+            } elseif ($child instanceof Swift_MimePart && self::supportsContentType($child->getContentType())) {
+                if ($child->getContentType() === 'text/html') {
                     $bodyHtml = $child->getBody();
-                } elseif ($child->getContentType() == "text/plain") {
+                } elseif ($child->getContentType() === 'text/plain') {
                     $bodyText = $child->getBody();
                 }
             }
@@ -105,7 +105,7 @@ class MessagePayloadV31 extends BaseMessagePayload {
         );
 
         if (!empty($from)) {
-            if (is_null($from['Name'])) {
+            if ($from['Name'] === null) {
                 unset($from['Name']);
             }
             $mailjetMessage['From'] = $from;
@@ -119,13 +119,13 @@ class MessagePayloadV31 extends BaseMessagePayload {
         if (!empty($bcc)) {
             $mailjetMessage['Bcc'] = $bcc;
         }
-        if (!is_null($message->getSubject())) {
+        if ($message->getSubject() !== null) {
             $mailjetMessage['Subject'] = $message->getSubject();
         }
-        if (!is_null($bodyHtml)) {
+        if ($bodyHtml !== null) {
             $mailjetMessage['HTMLPart'] = $bodyHtml;
         }
-        if (!is_null($bodyText)) {
+        if ($bodyText !== null) {
             $mailjetMessage['TextPart'] = $bodyText;
         }
         if ($replyTo = $this->getReplyTo($message)) {
@@ -177,23 +177,25 @@ class MessagePayloadV31 extends BaseMessagePayload {
     /**
      * Get the 'reply_to' headers and format as required by Mailjet.
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Message $message
      *
      * @return array|null
      */
-    private function getReplyTo(Swift_Mime_Message $message) {
+    private function getReplyTo(Swift_Message $message) {
         if (is_array($message->getReplyTo())) {
             return array('Email' => key($message->getReplyTo()), 'Name' => current($message->getReplyTo()));
-        } elseif (is_string($message->getReplyTo())) {
-            return array('Email' => $message->getReplyTo());
-        } else {
-            return null;
         }
+
+        if (is_string($message->getReplyTo())) {
+            return array('Email' => $message->getReplyTo());
+        }
+
+        return null;
     }
 
     /**
      * Returns the version of the message format
-     * @return version of the message format
+     * @return string Version of the message format
      */
     public function getVersion() {
 

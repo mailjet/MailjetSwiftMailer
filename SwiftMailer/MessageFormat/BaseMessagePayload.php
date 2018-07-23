@@ -2,17 +2,17 @@
 
 namespace Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat;
 
-use \Swift_Mime_Message;
+use \Swift_Message;
 
 abstract class BaseMessagePayload implements MessageFormatStrategyInterface
 {
     /**
-     * @param Swift_Mime_Message $message
+     * @param Swift_Message $message
      *
      * @return string
      * @throws \ReflectionException
      */
-    protected static function getMessagePrimaryContentType(Swift_Mime_Message $message)
+    protected static function getMessagePrimaryContentType(Swift_Message $message)
     {
         $contentType = $message->getContentType();
         if (self::supportsContentType($contentType)) {
@@ -49,19 +49,19 @@ abstract class BaseMessagePayload implements MessageFormatStrategyInterface
      */
     protected static function supportsContentType($contentType)
     {
-        return in_array($contentType, self::getSupportedContentTypes());
+        return in_array($contentType, self::getSupportedContentTypes(), true);
     }
 
     /**
      * Extract Mailjet specific header
      * return an array of formatted data for Mailjet send API
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Message $message
      * @param array              $mailjetHeaders
      *
      * @return array
      */
-    protected static function prepareHeaders(Swift_Mime_Message $message, $mailjetHeaders)
+    protected static function prepareHeaders(Swift_Message $message, $mailjetHeaders)
     {
         $messageHeaders = $message->getHeaders();
 
@@ -71,7 +71,7 @@ abstract class BaseMessagePayload implements MessageFormatStrategyInterface
             /** @var \Swift_Mime_Headers_UnstructuredHeader $value */
             if (null !== $value = $messageHeaders->get($headerName)) {
                 // Handle custom headers
-                if($headerName == "X-MJ-Vars" && is_string($value->getValue())){
+                if($headerName === 'X-MJ-Vars' && is_string($value->getValue())){
                     $mailjetData[$mailjetHeaders[$headerName]] = json_decode($value->getValue());
                 } else {
                     $mailjetData[$mailjetHeaders[$headerName]] = $value->getValue();
@@ -87,11 +87,11 @@ abstract class BaseMessagePayload implements MessageFormatStrategyInterface
     /**
      * Extract user defined starting with X-*
      *
-     * @param  Swift_Mime_Message $message
+     * @param  Swift_Message $message
      *
      * @return array
      */
-    protected static function findUserDefinedHeaders(Swift_Mime_Message $message)
+    protected static function findUserDefinedHeaders(Swift_Message $message)
     {
         $messageHeaders = $message->getHeaders();
         $userDefinedHeaders = [];
@@ -111,12 +111,12 @@ abstract class BaseMessagePayload implements MessageFormatStrategyInterface
     /**
      * Convert Swift_Mime_SimpleMessage into Mailjet Payload for send API
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Mime_SimpleMessage $message
      *
      * @return array Mailjet Send Message
      * @throws \Swift_SwiftException
      */
-    abstract public function getMailjetMessage(Swift_Mime_Message $message);
+    abstract public function getMailjetMessage(Swift_Message $message);
 
     /**
      * Returns the version of the message format

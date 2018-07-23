@@ -2,10 +2,10 @@
 
 namespace Mailjet\MailjetSwiftMailer\SwiftMailer;
 
+use Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat\MessageFormatStrategyInterface;
 use \Swift_Events_EventDispatcher;
 use \Swift_Events_EventListener;
 use \Swift_Events_SendEvent;
-use \Swift_Mime_SimpleMessage;
 use \Swift_Transport;
 use Mailjet\Resources;
 use Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat\MessagePayloadV31;
@@ -27,10 +27,10 @@ class MailjetTransport implements Swift_Transport {
      * Mailjet client
      * @var \Mailjet\Client
      */
-    protected $mailjetClient = null;
+    protected $mailjetClient;
 
     /**
-     * @var Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat\MessageFormatStrategyInterface
+     * @var MessageFormatStrategyInterface
      */
     public $messageFormat;
 
@@ -109,11 +109,11 @@ class MailjetTransport implements Swift_Transport {
     }
 
     /**
-     * @param \Swift_Message $message
+     * @param \Swift_Mime_SimpleMessage $message
      * @param null $failedRecipients
      * @return int Number of messages sent
      */
-    public function send(\Swift_Message $message, &$failedRecipients = null) {
+    public function send(\Swift_Mime_SimpleMessage $message, &$failedRecipients = null) {
         $this->resultApi = null;
         $failedRecipients = (array) $failedRecipients;
         if ($event = $this->eventDispatcher->createSendEvent($this, $message)) {
@@ -126,7 +126,7 @@ class MailjetTransport implements Swift_Transport {
 
         // extract Mailjet Message from SwiftMailer Message
         $mailjetMessage = $this->messageFormat->getMailjetMessage($message);
-        if (is_null($this->mailjetClient)) {
+        if ($this->mailjetClient === null) {
             // create Mailjet client
             $this->mailjetClient = $this->createMailjetClient();
         }
@@ -171,7 +171,7 @@ class MailjetTransport implements Swift_Transport {
         foreach ($messages as $message) {
             // extract Mailjet Message from SwiftMailer Message
             $mailjetMessage = $this->messageFormat->getMailjetMessage($message);
-            if (is_null($this->mailjetClient)) {
+            if ($this->mailjetClient === null) {
                 // create Mailjet client
                 $this->mailjetClient = $this->createMailjetClient();
             }
@@ -179,9 +179,9 @@ class MailjetTransport implements Swift_Transport {
              * contains an array Messages.
              */
             if ($this->messageFormat->getVersion() === 'v3.1') {
-                array_push($bulkContainer['Messages'], $mailjetMessage['Messages'][0]);
+                $bulkContainer['Messages'][] = $mailjetMessage['Messages'][0];
             } else {
-                array_push($bulkContainer['Messages'], $mailjetMessage);
+                $bulkContainer['Messages'][] = $mailjetMessage;
             }
         }
         // Create mailjetClient
@@ -221,10 +221,10 @@ class MailjetTransport implements Swift_Transport {
                 if (isset($message['To'])) {
                     $sendCount += count($message['To']);
                 }
-                if (isset($message['Bcc']) && (!empty($message['Bcc']))) {
+                if (isset($message['Bcc']) && !empty($message['Bcc'])) {
                     $sendCount += count($message['Bcc']);
                 }
-                if (isset($message['Cc']) && (!empty($message['Cc']))) {
+                if (isset($message['Cc']) && !empty($message['Cc'])) {
                     $sendCount += count($message['Cc']);
                 }
             }
@@ -249,7 +249,7 @@ class MailjetTransport implements Swift_Transport {
             throw new \Swift_TransportException('Cannot create instance of \Mailjet\Client while API key is NULL');
         }
 
-        if (isset($this->clientOptions)) {
+        if ($this->clientOptions !== null) {
             return new \Mailjet\Client($this->apiKey, $this->apiSecret, $this->call, $this->clientOptions);
         }
 
