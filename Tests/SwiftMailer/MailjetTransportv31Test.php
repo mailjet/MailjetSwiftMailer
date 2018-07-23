@@ -30,7 +30,7 @@ class MailjetTransportv31Test extends TestCase {
      * @return MailjetTransport
      */
     protected function createTransport() {
-        $clientOptions = ['url' => "api.mailjet.com", 'version' => 'v3.1', 'call' => false];
+        $clientOptions = ['url' => 'api.mailjet.com', 'version' => 'v3.1', 'call' => false];
         $transport = new MailjetTransport($this->dispatcher, self::MAILJET_TEST_API_KEY, self::MAILJET_TEST_API_SECRET, false, $clientOptions);
         $transport->setApiKey(self::MAILJET_TEST_API_KEY);
         $transport->setApiSecret(self::MAILJET_TEST_API_SECRET);
@@ -39,7 +39,7 @@ class MailjetTransportv31Test extends TestCase {
     }
 
     public function testCanBeInstanciable() {
-        echo "Running test for SendAPI v3.1";
+        echo 'Running test for SendAPI v3.1';
         $this->assertInstanceOf(
                 MailjetTransport::class, $this->createTransport()
         );
@@ -52,7 +52,7 @@ class MailjetTransportv31Test extends TestCase {
                 ->addTo('to@example.com', 'To Name')
                 ->addFrom('from@example.com', 'From Name')
         ;
-        $message->setBody("Hello world!", 'text/plain');
+        $message->setBody('Hello world!', 'text/plain');
         $mailjetMessage = $transport->messageFormat->getMailjetMessage($message)['Messages'][0];
         $result = $transport->send($message);
         $this->assertEquals('Hello world!', $mailjetMessage['TextPart']);
@@ -116,7 +116,7 @@ class MailjetTransportv31Test extends TestCase {
                 ->addTo('to@example.com', 'To Name')
                 ->addFrom('from@example.com', 'From Name')
         ;
-        $message->setBody("Hello world!");
+        $message->setBody('Hello world!');
         $message->getHeaders()->addTextHeader('X-MJ-TemplateID', 'azertyuiop');
         $message->getHeaders()->addTextHeader('X-MJ-TemplateLanguage', true);
         $message->getHeaders()->addTextHeader('X-MJ-TemplateErrorReporting', 'air-traffic-control@mailjet.com');

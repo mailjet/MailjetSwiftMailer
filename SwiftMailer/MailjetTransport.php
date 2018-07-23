@@ -5,7 +5,7 @@ namespace Mailjet\MailjetSwiftMailer\SwiftMailer;
 use \Swift_Events_EventDispatcher;
 use \Swift_Events_EventListener;
 use \Swift_Events_SendEvent;
-use \Swift_Mime_Message;
+use \Swift_Mime_SimpleMessage;
 use \Swift_Transport;
 use Mailjet\Resources;
 use Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat\MessagePayloadV31;
@@ -109,11 +109,11 @@ class MailjetTransport implements Swift_Transport {
     }
 
     /**
-     * @param Swift_Mime_Message $message
+     * @param \Swift_Message $message
      * @param null $failedRecipients
      * @return int Number of messages sent
      */
-    public function send(Swift_Mime_Message $message, &$failedRecipients = null) {
+    public function send(\Swift_Message $message, &$failedRecipients = null) {
         $this->resultApi = null;
         $failedRecipients = (array) $failedRecipients;
         if ($event = $this->eventDispatcher->createSendEvent($this, $message)) {
