@@ -2,8 +2,8 @@
 
 namespace Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat;
 
-use \Swift_Mime_Message;
 use \Swift_Attachment;
+use \Swift_Message;
 use \Swift_MimePart;
 
 class MessagePayloadV3 extends BaseMessagePayload {
@@ -14,19 +14,19 @@ class MessagePayloadV3 extends BaseMessagePayload {
      * https://dev.mailjet.com/guides/#send-api-json-properties
      * Convert Swift_Mime_SimpleMessage into Mailjet Payload for send API
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Message $message
      * @return array Mailjet Send Message
      * @throws \Swift_SwiftException
      */
-    public function getMailjetMessage(Swift_Mime_Message $message) {
+    public function getMailjetMessage(Swift_Message $message) {
         $contentType = $this->getMessagePrimaryContentType($message);
         $fromAddresses = $message->getFrom();
         $fromEmails = array_keys($fromAddresses);
         $attachments = array();
         $inline_attachments = array();
         // Process Headers
-        $customHeaders = $this->prepareHeaders($message, $this->getMailjetHeaders());
-        $userDefinedHeaders = $this->findUserDefinedHeaders($message);
+        $customHeaders = self::prepareHeaders($message, self::getMailjetHeaders());
+        $userDefinedHeaders = self::findUserDefinedHeaders($message);
         if ($replyTo = $this->getReplyTo($message)) {
             $userDefinedHeaders = array_merge($userDefinedHeaders, array('Reply-To' => $replyTo));
         }
@@ -43,7 +43,7 @@ class MessagePayloadV3 extends BaseMessagePayload {
         foreach ($message->getChildren() as $child) {
             if ($child instanceof Swift_Attachment) {
                 //Handle regular attachments
-                if ($child->getDisposition() === "attachment") {
+                if ($child->getDisposition() === 'attachment') {
                     $attachments[] = array(
                         'Content-type' => $child->getContentType(),
                         'Filename' => $child->getFilename(),
@@ -51,17 +51,17 @@ class MessagePayloadV3 extends BaseMessagePayload {
                     );
                 }
                 //Handle inline attachments
-                elseif ($child->getDisposition() === "inline") {
+                elseif ($child->getDisposition() === 'inline') {
                     $inline_attachments[] = array(
                         'Content-type' => $child->getContentType(),
                         'Filename' => $child->getFilename(),
                         'content' => base64_encode($child->getBody())
                     );
                 }
-            } elseif ($child instanceof Swift_MimePart && $this->supportsContentType($child->getContentType())) {
-                if ($child->getContentType() == "text/html") {
+            } elseif ($child instanceof Swift_MimePart && self::supportsContentType($child->getContentType())) {
+                if ($child->getContentType() === 'text/html') {
                     $bodyHtml = $child->getBody();
-                } elseif ($child->getContentType() == "text/plain") {
+                } elseif ($child->getContentType() === 'text/plain') {
                     $bodyText = $child->getBody();
                 }
             }
@@ -71,19 +71,19 @@ class MessagePayloadV3 extends BaseMessagePayload {
         if (count($recipients) > 0) {
             $mailjetMessage['Recipients'] = $recipients;
         }
-        if (!is_null($fromEmails[0])) {
+        if ($fromEmails[0] !== null) {
             $mailjetMessage['FromEmail'] = $fromEmails[0];
         }
-        if (!is_null($message->getSubject())) {
+        if ($message->getSubject() !== null) {
             $mailjetMessage['Subject'] = $message->getSubject();
         }
-        if (!is_null($fromAddresses[$fromEmails[0]])) {
+        if ($fromAddresses[$fromEmails[0]] !== null) {
             $mailjetMessage['FromName'] = $fromAddresses[$fromEmails[0]];
         }
-        if (!is_null($bodyHtml)) {
+        if ($bodyHtml !== null) {
             $mailjetMessage['Html-part'] = $bodyHtml;
         }
-        if (!is_null($bodyText)) {
+        if ($bodyText !== null) {
             $mailjetMessage['Text-part'] = $bodyText;
         }
         if (count($userDefinedHeaders) > 0) {
@@ -128,11 +128,11 @@ class MessagePayloadV3 extends BaseMessagePayload {
     /**
      * Get the 'reply_to' headers and format as required by Mailjet.
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Message $message
      *
      * @return string|null
      */
-    protected function getReplyTo(Swift_Mime_Message $message) {
+    protected function getReplyTo(Swift_Message $message) {
         if (is_array($message->getReplyTo())) {
             return current($message->getReplyTo()) . ' <' . key($message->getReplyTo()) . '>';
         }
@@ -141,11 +141,11 @@ class MessagePayloadV3 extends BaseMessagePayload {
     /**
      * Get all the addresses this message should be sent to.
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Message $message
      *
      * @return array
      */
-    protected function getRecipients(Swift_Mime_Message $message) {
+    protected function getRecipients(Swift_Message $message) {
         $to = [];
         if ($message->getTo()) {
             $to = array_merge($to, $message->getTo());
@@ -158,7 +158,7 @@ class MessagePayloadV3 extends BaseMessagePayload {
         }
         $recipients = [];
         foreach ($to as $address => $name) {
-            if (!is_null($name)) {
+            if ($name !== null) {
                 $recipients[] = ['Email' => $address, 'Name' => $name];
             } else {
                 $recipients[] = ['Email' => $address];
@@ -169,7 +169,7 @@ class MessagePayloadV3 extends BaseMessagePayload {
 
     /**
      * Returns the version of the message format
-     * @return version of the message format
+     * @return string Version of the message format
      */
     public function getVersion() {
 
