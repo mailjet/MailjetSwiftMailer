@@ -2,17 +2,17 @@
 
 namespace Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat;
 
-use \Swift_Mime_Message;
+use \Swift_Mime_SimpleMessage;
 
 abstract class BaseMessagePayload implements MessageFormatStrategyInterface
 {
     /**
-     * @param Swift_Mime_Message $message
+     * @param Swift_Mime_SimpleMessage $message
      *
      * @return string
      * @throws \ReflectionException
      */
-    protected static function getMessagePrimaryContentType(Swift_Mime_Message $message)
+    protected static function getMessagePrimaryContentType(Swift_Mime_SimpleMessage $message)
     {
         $contentType = $message->getContentType();
         if (self::supportsContentType($contentType)) {
@@ -56,12 +56,12 @@ abstract class BaseMessagePayload implements MessageFormatStrategyInterface
      * Extract Mailjet specific header
      * return an array of formatted data for Mailjet send API
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Mime_SimpleMessage $message
      * @param array              $mailjetHeaders
      *
      * @return array
      */
-    protected static function prepareHeaders(Swift_Mime_Message $message, $mailjetHeaders)
+    protected static function prepareHeaders(Swift_Mime_SimpleMessage $message, $mailjetHeaders)
     {
         $messageHeaders = $message->getHeaders();
 
@@ -87,11 +87,11 @@ abstract class BaseMessagePayload implements MessageFormatStrategyInterface
     /**
      * Extract user defined starting with X-*
      *
-     * @param  Swift_Mime_Message $message
+     * @param  Swift_Mime_SimpleMessage $message
      *
      * @return array
      */
-    protected static function findUserDefinedHeaders(Swift_Mime_Message $message)
+    protected static function findUserDefinedHeaders(Swift_Mime_SimpleMessage $message)
     {
         $messageHeaders = $message->getHeaders();
         $userDefinedHeaders = [];
@@ -111,12 +111,12 @@ abstract class BaseMessagePayload implements MessageFormatStrategyInterface
     /**
      * Convert Swift_Mime_SimpleMessage into Mailjet Payload for send API
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Mime_SimpleMessage $message
      *
      * @return array Mailjet Send Message
      * @throws \Swift_SwiftException
      */
-    abstract public function getMailjetMessage(Swift_Mime_Message $message);
+    abstract public function getMailjetMessage(Swift_Mime_SimpleMessage $message);
 
     /**
      * Returns the version of the message format

@@ -2,7 +2,7 @@
 
 namespace Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat;
 
-use \Swift_Mime_Message;
+use \Swift_Mime_SimpleMessage;
 use \Swift_Attachment;
 use \Swift_MimePart;
 
@@ -14,11 +14,11 @@ class MessagePayloadV3 extends BaseMessagePayload {
      * https://dev.mailjet.com/guides/#send-api-json-properties
      * Convert Swift_Mime_SimpleMessage into Mailjet Payload for send API
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Mime_SimpleMessage $message
      * @return array Mailjet Send Message
      * @throws \Swift_SwiftException
      */
-    public function getMailjetMessage(Swift_Mime_Message $message) {
+    public function getMailjetMessage(Swift_Mime_SimpleMessage $message) {
         $contentType = $this->getMessagePrimaryContentType($message);
         $fromAddresses = $message->getFrom();
         $fromEmails = array_keys($fromAddresses);
@@ -128,11 +128,11 @@ class MessagePayloadV3 extends BaseMessagePayload {
     /**
      * Get the 'reply_to' headers and format as required by Mailjet.
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Mime_SimpleMessage $message
      *
      * @return string|null
      */
-    protected function getReplyTo(Swift_Mime_Message $message) {
+    protected function getReplyTo(Swift_Mime_SimpleMessage $message) {
         if (is_array($message->getReplyTo())) {
             return current($message->getReplyTo()) . ' <' . key($message->getReplyTo()) . '>';
         }
@@ -141,11 +141,11 @@ class MessagePayloadV3 extends BaseMessagePayload {
     /**
      * Get all the addresses this message should be sent to.
      *
-     * @param Swift_Mime_Message $message
+     * @param Swift_Mime_SimpleMessage $message
      *
      * @return array
      */
-    protected function getRecipients(Swift_Mime_Message $message) {
+    protected function getRecipients(Swift_Mime_SimpleMessage $message) {
         $to = [];
         if ($message->getTo()) {
             $to = array_merge($to, $message->getTo());
