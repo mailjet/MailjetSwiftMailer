@@ -182,10 +182,19 @@ class MessagePayloadV31 extends BaseMessagePayload {
      * @return array|null
      */
     private function getReplyTo(Swift_Mime_Message $message) {
-        if (is_array($message->getReplyTo())) {
-            return array('Email' => key($message->getReplyTo()), 'Name' => current($message->getReplyTo()));
-        } elseif (is_string($message->getReplyTo())) {
-            return array('Email' => $message->getReplyTo());
+        $replyTo = $message->getReplyTo();
+
+        if (is_array($replyTo)) {
+            $email = key($replyTo);
+            $name = current($replyTo);
+
+            if (empty($name)){
+                return array('Email' => $email);
+            }
+
+            return array('Email' => $email, 'Name' => $name);
+        } elseif (is_string($replyTo)) {
+            return array('Email' => $replyTo);
         } else {
             return null;
         }
