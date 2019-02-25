@@ -255,6 +255,32 @@ class MailjetTransportv31Test extends TestCase {
         }
     }
 
+    public function testReplyToWithoutName(){
+        $message = new \Swift_Message('Test Subject', '<p>Foo bar</p>', 'text/html');
+        $message->setReplyTo('alice+replyTo@nowhere.com');
+        $message->setFrom('alice+from@nowhere.com');
+        $message->setTo('bob@nowhere.com');
+        $message->setBody("Hello world!", 'text/plain');
+
+        $transport = $this->createTransport();
+        $mailjetMessage = $transport->messageFormat->getMailjetMessage($message)['Messages'][0];
+
+        $this->assertEquals(["Email" => 'alice+replyTo@nowhere.com'], $mailjetMessage['ReplyTo']);
+    }
+
+    public function testReplyTo(){
+        $message = new \Swift_Message('Test Subject', '<p>Foo bar</p>', 'text/html');
+        $message->setReplyTo('alice+replyTo@nowhere.com', 'Alice');
+        $message->setFrom('alice+from@nowhere.com');
+        $message->setTo('bob@nowhere.com');
+        $message->setBody("Hello world!", 'text/plain');
+
+        $transport = $this->createTransport();
+        $mailjetMessage = $transport->messageFormat->getMailjetMessage($message)['Messages'][0];
+
+        $this->assertEquals(["Email" => 'alice+replyTo@nowhere.com', "Name" => "Alice"], $mailjetMessage['ReplyTo']);
+    }
+
     /**
      * @param string $email
      * @param string $name
