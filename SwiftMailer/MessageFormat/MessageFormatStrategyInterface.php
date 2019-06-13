@@ -1,7 +1,7 @@
 <?php
 
 namespace Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat;
-use \Swift_Mime_Message;
+use \Swift_Mime_SimpleMessage;
 /**
  * Description of MessageFormatStrategyInterface
  *
@@ -9,7 +9,7 @@ use \Swift_Mime_Message;
  */
 interface MessageFormatStrategyInterface {
 
-    public function getMailjetMessage(Swift_Mime_Message $message);
+    public function getMailjetMessage(Swift_Mime_SimpleMessage $message);
 
     public function getVersion();
 }
