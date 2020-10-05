@@ -5,6 +5,7 @@ namespace Mailjet\MailjetSwiftMailer\SwiftMailer\MessageFormat;
 use \Swift_Mime_SimpleMessage;
 use \Swift_Attachment;
 use \Swift_MimePart;
+use \Swift_Image;
 
 class MessagePayloadV3 extends BaseMessagePayload {
 
@@ -41,18 +42,18 @@ class MessagePayloadV3 extends BaseMessagePayload {
 
         // Handle attachments
         foreach ($message->getChildren() as $child) {
-            if ($child instanceof Swift_Attachment) {
+            if (($child instanceof Swift_Attachment || $child instanceof Swift_Image)
+                && $child->getDisposition() === "inline"
+            ) {
+                $inline_attachments[] = array(
+                    'Content-type' => $child->getContentType(),
+                    'Filename' => $child->getFilename(),
+                    'content' => base64_encode($child->getBody())
+                );
+            } elseif ($child instanceof Swift_Attachment) {
                 //Handle regular attachments
                 if ($child->getDisposition() === "attachment") {
                     $attachments[] = array(
-                        'Content-type' => $child->getContentType(),
-                        'Filename' => $child->getFilename(),
-                        'content' => base64_encode($child->getBody())
-                    );
-                }
-                //Handle inline attachments
-                elseif ($child->getDisposition() === "inline") {
-                    $inline_attachments[] = array(
                         'Content-type' => $child->getContentType(),
                         'Filename' => $child->getFilename(),
                         'content' => base64_encode($child->getBody())
