@@ -50,15 +50,12 @@ class MessagePayloadV3 extends BaseMessagePayload {
                     'Filename' => $child->getFilename(),
                     'content' => base64_encode($child->getBody())
                 );
-            } elseif ($child instanceof Swift_Attachment) {
-                //Handle regular attachments
-                if ($child->getDisposition() === "attachment") {
-                    $attachments[] = array(
-                        'Content-type' => $child->getContentType(),
-                        'Filename' => $child->getFilename(),
-                        'content' => base64_encode($child->getBody())
-                    );
-                }
+            } elseif ($child instanceof Swift_Attachment && $child->getDisposition() === "attachment") {
+                $attachments[] = array(
+                    'Content-type' => $child->getContentType(),
+                    'Filename' => $child->getFilename(),
+                    'content' => base64_encode($child->getBody())
+                );
             } elseif ($child instanceof Swift_MimePart && $this->supportsContentType($child->getContentType())) {
                 if ($child->getContentType() == "text/html") {
                     $bodyHtml = $child->getBody();
