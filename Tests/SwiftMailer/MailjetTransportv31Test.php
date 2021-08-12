@@ -209,6 +209,24 @@ class MailjetTransportv31Test extends TestCase {
         $this->assertMessageSendable($message);
     }
 
+    public function testInlineImage() {
+        $transport = $this->createTransport();
+        $message = new \Swift_Message('Test Subject', '<p>Foo bar</p>', 'text/html');
+        $inline_image = new \Swift_Image($this->createPngContent(), 'filename.png', 'image/png');
+        $message->attach($inline_image);
+        $message
+                ->addTo('to@example.com', 'To Name')
+                ->addFrom('from@example.com', 'From Name')
+        ;
+        $mailjetMessage = $transport->messageFormat->getMailjetMessage($message)['Messages'][0];
+
+        $transport->send($message);
+
+        $this->assertMailjetMessageContainsInlineAttachment('image/png', 'filename.png', $this->createPngContent(), $mailjetMessage);
+
+        $this->assertMessageSendable($message);
+    }
+
     public function testBulkSendMessages() {
         $transport = $this->createTransport();
 
